@@ -305,12 +305,11 @@ export interface ComponentProps {
   // props type definition
 }
 
-// 2. Write JSDoc comments
+// 2. Write JSDoc comments directly above the component function
 /**
- * Component description
- * @param {Object} props - Component props
- * @param {string} props.prop1 - prop1 description
- * @param {number} [props.prop2] - prop2 description (optional)
+ * Component description - be specific about what it does
+ * @param {string} prop1 - prop1 description
+ * @param {number} [prop2] - prop2 description (optional)
  */
 export function ComponentName({ prop1, prop2 }: ComponentProps) {
   // Implementation
@@ -348,6 +347,13 @@ export function useHookName(): UseHookReturn {
 
 Write JSDoc comments for all functions, components, and hooks to quickly understand information.
 
+**Important Rules:**
+
+- JSDoc comments must be placed directly above the function/component, NOT above the interface
+- Avoid generic descriptions like "Component props" - be specific about what the component does
+- Use direct parameter names instead of `props.parameterName` format
+- Only document parameters that need explanation - obvious parameters can be omitted
+
 #### Function JSDoc Example
 
 ```typescript
@@ -369,11 +375,10 @@ export function useSearch() {
 
 ```typescript
 /**
- * City selection component
- * @param {Object} props - component props
- * @param {Function} props.onCitySelect - callback when city is selected
- * @param {string} [props.defaultCity] - default selected city
- * @param {boolean} [props.disabled] - disabled state
+ * City selection component for restaurant search
+ * @param {Function} onCitySelect - callback when city is selected
+ * @param {string} [defaultCity] - default selected city
+ * @param {boolean} [disabled] - disabled state
  */
 export function CitySelector({
   onCitySelect,
