@@ -61,15 +61,16 @@
 ```
 src/
 ├── components/          # 🌍 Global components (reusable)
-├── lib/                # 🌍 Global logic (reusable)
+├── lib/                # 🌍 Global external services (reusable)
+├── utils/              # 🌍 Global internal utilities (reusable)
 ├── hooks/              # 🌍 Global custom hooks (reusable)
 ├── types/              # 🌍 Global types (reusable)
 └── app/                # 🎯 App-specific logic (current domain)
     ├── components/      # App-only components
     ├── hooks/          # App-specific custom hooks
-    ├── lib/            # App-specific logic
-    ├── types/          # App-specific types
-    └── data/           # App-specific data
+    ├── lib/            # App-specific external services
+    ├── utils/          # App-specific internal utilities
+    └── types/          # App-specific types
 ```
 
 ### Component Classification Rules
@@ -118,28 +119,38 @@ app/components/
     └── results-layout.tsx
 ```
 
-#### `src/lib/` (Global)
+#### `src/lib/` (Global - External Services)
 
 ```
 lib/
-├── utils.ts             # Global utility functions
-├── constants.ts         # Global constants
-├── validations.ts       # Global validation logic
-└── api/                 # Global API clients
-    ├── http-client.ts
-    └── cache-service.ts
+├── supabase.ts          # Supabase client
+├── google-maps.ts        # Google Maps API
+└── openai.ts            # OpenAI API
 ```
 
-#### `src/app/lib/` (App-Specific)
+#### `src/utils/` (Global - Internal Utilities)
+
+```
+utils/
+├── index.ts            # Common utilities (cn function)
+├── constants.ts         # Global constants
+└── validations.ts       # Global validation logic
+```
+
+#### `src/app/lib/` (App-Specific - External Services)
 
 ```
 app/lib/
-├── api/                 # App-specific API
-│   ├── google-places.ts
-│   └── ai-service.ts
-└── utils/               # App-specific utilities
-    ├── search-utils.ts
-    └── ranking-utils.ts
+├── google-places.ts     # Google Places API
+└── ai-service.ts        # AI analysis service
+```
+
+#### `src/app/utils/` (App-Specific - Internal Utilities)
+
+```
+app/utils/
+├── search-utils.ts      # Search-related utilities
+└── ranking-utils.ts     # Ranking algorithms
 ```
 
 #### `src/hooks/` (Global)
@@ -177,15 +188,6 @@ app/types/
 └── ai-analysis.ts
 ```
 
-#### `src/app/data/` (App-Specific)
-
-```
-app/data/
-├── cities.ts
-├── foods.ts
-└── must-try-foods.ts
-```
-
 ## 🔧 Coding Rules
 
 ### Import Path Rules
@@ -198,6 +200,21 @@ import { LoadingSpinner } from '@/components/common/loading-spinner';
 // App-specific component usage
 import { CitySelector } from '@/app/components/search/city-selector';
 import { RestaurantCard } from '@/app/components/results/restaurant-card';
+
+// Global external services usage
+import { googleMaps } from '@/lib/google-maps';
+import { openai } from '@/lib/openai';
+
+// Global internal utilities usage
+import { cn } from '@/utils';
+import { validateEmail } from '@/utils/validations';
+
+// App-specific external services usage
+import { searchRestaurants } from '@/app/lib/google-places';
+import { analyzeRestaurant } from '@/app/lib/ai-service';
+
+// App-specific internal utilities usage
+import { sortByPriority } from '@/app/utils/ranking-utils';
 
 // Global hook usage
 import { useLocalStorage } from '@/hooks/use-local-storage';
