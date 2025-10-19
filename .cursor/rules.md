@@ -6,6 +6,54 @@
 - **Architecture**: Next.js 15 + React 19 + TypeScript + Tailwind CSS + shadcn/ui
 - **Structure**: Single-page MVP (SPA-like with SSR benefits)
 
+## 🛠️ Technology Stack
+
+### Core Framework
+
+- **Next.js 15.5.6**: React framework with App Router
+- **React 19.1.0**: Latest React with concurrent features
+- **TypeScript 5**: Type-safe JavaScript development
+
+### Styling & UI
+
+- **Tailwind CSS 4**: Utility-first CSS framework
+- **shadcn/ui**: Component library with Radix UI primitives
+- **Lucide React**: Icon library
+- **Class Variance Authority**: Component variant management
+
+### Development Tools
+
+- **ESLint**: Code linting with Next.js config
+- **Prettier**: Code formatting
+- **Turbopack**: Fast bundler for development
+
+### Key Dependencies
+
+- **@radix-ui/react-select**: Accessible select component
+- **@radix-ui/react-slot**: Composition primitive
+- **clsx**: Conditional className utility
+- **tailwind-merge**: Tailwind class merging utility
+- **tw-animate-css**: Tailwind animation utilities
+
+### Build & Development
+
+- **Turbopack**: Fast development server
+- **TypeScript**: Strict mode enabled
+- **ESLint + Prettier**: Code quality and formatting
+
+### Package Manager
+
+- **pnpm**: Fast, disk space efficient package manager
+- **Lock file**: pnpm-lock.yaml for dependency version control
+
+### Configuration Files
+
+- **components.json**: shadcn/ui configuration
+- **tsconfig.json**: TypeScript configuration
+- **eslint.config.mjs**: ESLint configuration
+- **.prettierrc**: Prettier configuration
+- **postcss.config.mjs**: PostCSS configuration
+
 ## 📁 Folder Structure Rules
 
 ### Global vs App-Specific Separation Principle
@@ -215,6 +263,13 @@ export function ComponentName() {
   </div>
 </div>
 ```
+
+#### shadcn/ui Integration
+
+- Use `@/components/ui` for shadcn/ui components
+- Follow shadcn/ui component patterns
+- Use `cn()` utility for conditional classes
+- Leverage Radix UI primitives for accessibility
 
 ## 🚀 Development Workflow
 
