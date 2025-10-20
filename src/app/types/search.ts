@@ -20,3 +20,29 @@ export interface PrioritySettings {
   price: number;
   distance: number;
 }
+
+export interface CommonFood {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+}
+
+export interface LocalFood {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  city: string;
+  country: string;
+}
+
+export interface SelectedFood {
+  type: 'common' | 'local';
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  city?: string;
+  country?: string;
+}

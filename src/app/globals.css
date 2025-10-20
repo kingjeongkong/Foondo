@@ -154,4 +154,24 @@
     @apply text-sm md:text-base leading-relaxed text-gray-600;
     font-family: 'SF Pro Text', system-ui, sans-serif;
   }
+
+  /* 음식 카드 스타일 */
+  .food-card {
+    @apply rounded-2xl border-2 border-gray-200;
+    @apply hover:border-warm-taste hover:shadow-md;
+    @apply transition-all duration-200;
+    @apply cursor-pointer;
+  }
+
+  .food-card:hover {
+    @apply transform scale-[1.02];
+  }
+
+  .common-food {
+    @apply border-blue-200 hover:border-blue-400;
+  }
+
+  .local-food {
+    @apply border-green-200 hover:border-green-400;
+  }
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { CitySelector } from '@/app/components/search/CitySelector';
-import type { City } from '@/app/types/search';
+import { FoodSelector } from '@/app/components/search/FoodSelector';
+import type { City, SelectedFood } from '@/app/types/search';
 import { useState } from 'react';
 
 /**
@@ -10,6 +11,26 @@ import { useState } from 'react';
  */
 export default function Home() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [selectedFood, setSelectedFood] = useState<SelectedFood | null>(null);
+  const [currentStep, setCurrentStep] = useState<
+    'city' | 'food' | 'priority' | 'results'
+  >('city');
+
+  const handleCitySelect = (city: City) => {
+    setSelectedCity(city);
+  };
+
+  const handleFoodSelect = (food: SelectedFood) => {
+    setSelectedFood(food);
+  };
+
+  const handleBack = () => {
+    if (currentStep === 'food') {
+      setCurrentStep('city');
+    } else if (currentStep === 'priority') {
+      setCurrentStep('food');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 py-4 md:py-8">
@@ -23,13 +44,30 @@ export default function Home() {
           </p>
         </div>
 
-        {/* 메인 콘텐츠 */}
-        <div className="flex justify-center">
-          <CitySelector
-            onCitySelect={setSelectedCity}
-            selectedCity={selectedCity}
-          />
-        </div>
+        {/* 단계별 컴포넌트 */}
+        {currentStep === 'city' && (
+          <div className="flex justify-center">
+            <CitySelector
+              onCitySelect={handleCitySelect}
+              onNext={() => setCurrentStep('food')}
+              selectedCity={selectedCity}
+            />
+          </div>
+        )}
+
+        {currentStep === 'food' && selectedCity && (
+          <div className="flex justify-center">
+            <FoodSelector
+              selectedCity={selectedCity}
+              selectedFood={selectedFood}
+              onFoodSelect={handleFoodSelect}
+              onNext={() => setCurrentStep('priority')}
+              onBack={handleBack}
+            />
+          </div>
+        )}
+
+        {/* TODO: priority, results 단계 추가 */}
       </div>
     </div>
   );

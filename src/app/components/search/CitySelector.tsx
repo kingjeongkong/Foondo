@@ -14,6 +14,7 @@ import LocationAutocomplete from './LocationAutocomplete';
 
 export interface CitySelectorProps {
   onCitySelect: (city: City) => void;
+  onNext: () => void;
   selectedCity?: City | null;
   disabled?: boolean;
 }
@@ -26,6 +27,7 @@ export interface CitySelectorProps {
  */
 export function CitySelector({
   onCitySelect,
+  onNext,
   selectedCity,
   disabled = false,
 }: CitySelectorProps) {
@@ -75,9 +77,7 @@ export function CitySelector({
             <Button
               variant={'outline'}
               className="ai-recommendation p-4 animate-in slide-in-from-top-2 duration-300"
-              onClick={() => {
-                console.log('음식 목록 보여주기로 컴포넌트 교체');
-              }}
+              onClick={onNext}
               disabled={disabled || isLoading}
             >
               Get Recommendations of {selectedCity.name}&apos;s food
