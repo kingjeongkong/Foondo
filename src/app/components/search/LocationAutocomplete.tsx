@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -9,7 +10,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { MapboxSearchResult, searchLocations } from '@/lib/mapbox';
-import { MapPin } from 'lucide-react';
+import { MapPin, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface LocationAutocompleteProps {
@@ -99,18 +100,38 @@ export default function LocationAutocomplete({
     }
   };
 
+  const handleClearInput = () => {
+    setInputValue('');
+    setIsOpen(false);
+    onSelect(null);
+  };
+
   return (
     <div className="relative">
       <Command className="food-selection">
-        <CommandInput
-          placeholder="Search for a city..."
-          value={inputValue}
-          onValueChange={handleInputChange}
-          disabled={disabled}
-          className={`${error ? 'ring-2 ring-red-500' : ''} ${
-            disabled ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        />
+        <div className="relative">
+          <CommandInput
+            placeholder="Search for a city..."
+            value={inputValue}
+            onValueChange={handleInputChange}
+            disabled={disabled}
+            className={`pr-5 ${error ? 'ring-2 ring-red-500' : ''} ${
+              disabled ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          />
+          {inputValue && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleClearInput}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              disabled={disabled}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
         {isOpen && (
           <CommandList>
             {isLoading ? (
