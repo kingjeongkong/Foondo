@@ -1,7 +1,7 @@
 'use client';
 
-import { CITIES } from '@/app/data/cities';
 import type { City } from '@/app/types/search';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,14 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useState } from 'react';
+import LocationAutocomplete from './LocationAutocomplete';
 
 export interface CitySelectorProps {
   onCitySelect: (city: City) => void;
@@ -37,17 +31,22 @@ export function CitySelector({
 }: CitySelectorProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleCityChange = async (cityId: string) => {
-    if (disabled || isLoading) return;
+  const handleLocationSelect = (
+    location: { city: string; country: string; location_id: string } | null
+  ) => {
+    if (disabled || isLoading || !location) return;
 
     setIsLoading(true);
 
     try {
-      // 도시 ID로 찾기
-      const city = CITIES.find((c) => c.id === cityId);
-      if (city) {
-        onCitySelect(city);
-      }
+      // Mapbox 결과를 City 타입으로 변환
+      const city: City = {
+        id: location.location_id,
+        name: location.city,
+        country: location.country,
+      };
+
+      onCitySelect(city);
     } catch (error) {
       console.error('도시 선택 중 오류 발생:', error);
     } finally {
@@ -66,29 +65,25 @@ export function CitySelector({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Select
-          value={selectedCity?.id || ''}
-          onValueChange={handleCityChange}
-          disabled={disabled || isLoading}
-        >
-          <SelectTrigger className="food-selection">
-            <SelectValue placeholder="Select a city..." />
-          </SelectTrigger>
-          <SelectContent>
-            {CITIES.map((city) => (
-              <SelectItem
-                key={city.id}
-                value={city.id}
-                className="flex items-center gap-2"
-              >
-                <span className="text-lg">🏙️</span>
-                <span>
-                  {city.name}, {city.country}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <LocationAutocomplete
+          onSelect={handleLocationSelect}
+          disabled={disabled}
+        />
+
+        {selectedCity && (
+          <div className="flex items-center justify-center mt-5">
+            <Button
+              variant={'outline'}
+              className="ai-recommendation p-4 animate-in slide-in-from-top-2 duration-300"
+              onClick={() => {
+                console.log('음식 목록 보여주기로 컴포넌트 교체');
+              }}
+              disabled={disabled || isLoading}
+            >
+              Get Recommendations of {selectedCity.name}&apos;s food
+            </Button>
+          </div>
+        )}
 
         {isLoading && (
           <div className="text-center text-sm text-gray-500 flex items-center justify-center gap-2">
