@@ -123,7 +123,7 @@ export default function LocationAutocomplete({
                 {suggestions.map((suggestion) => (
                   <CommandItem
                     key={suggestion.id}
-                    value={suggestion.text}
+                    value={suggestion.place_name}
                     onSelect={() => handleSuggestionClick(suggestion)}
                     className="flex items-start space-x-3"
                   >
