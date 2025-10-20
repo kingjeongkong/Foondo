@@ -56,11 +56,13 @@ export function CitySelector({
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Choose Your City</CardTitle>
-        <CardDescription>
-          Select the city where you want to find restaurants
+    <Card className="restaurant-card w-full max-w-md mx-auto">
+      <CardHeader className="pb-4">
+        <CardTitle className="taste-title flex items-center gap-2">
+          🍽️ Choose Your City
+        </CardTitle>
+        <CardDescription className="taste-description">
+          Where would you like to discover amazing food?
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -69,20 +71,30 @@ export function CitySelector({
           onValueChange={handleCityChange}
           disabled={disabled || isLoading}
         >
-          <SelectTrigger>
+          <SelectTrigger className="food-selection">
             <SelectValue placeholder="Select a city..." />
           </SelectTrigger>
           <SelectContent>
             {CITIES.map((city) => (
-              <SelectItem key={city.id} value={city.id}>
-                {city.name}, {city.country}
+              <SelectItem
+                key={city.id}
+                value={city.id}
+                className="flex items-center gap-2"
+              >
+                <span className="text-lg">🏙️</span>
+                <span>
+                  {city.name}, {city.country}
+                </span>
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         {isLoading && (
-          <div className="text-center text-sm text-gray-500">Loading...</div>
+          <div className="text-center text-sm text-gray-500 flex items-center justify-center gap-2">
+            <span className="animate-spin">⏳</span>
+            <span>Finding the best cities...</span>
+          </div>
         )}
       </CardContent>
     </Card>
