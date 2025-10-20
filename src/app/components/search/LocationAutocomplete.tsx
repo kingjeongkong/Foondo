@@ -115,7 +115,7 @@ export default function LocationAutocomplete({
             value={inputValue}
             onValueChange={handleInputChange}
             disabled={disabled}
-            className={`pr-5 ${error ? 'ring-2 ring-red-500' : ''} ${
+            className={`pr-6 text-base md:text-sm ${error ? 'ring-2 ring-red-500' : ''} ${
               disabled ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           />
@@ -125,7 +125,7 @@ export default function LocationAutocomplete({
               variant="ghost"
               size="sm"
               onClick={handleClearInput}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100 touch-manipulation"
               disabled={disabled}
             >
               <X className="w-4 h-4" />

@@ -12,10 +12,10 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 py-4 md:py-8">
       <div className="container mx-auto px-4">
         {/* 헤더 */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8 md:mb-12">
           <h1 className="taste-title mb-4">🍽️ AI Restaurant Recommendation</h1>
           <p className="taste-description max-w-2xl mx-auto">
             Discover your perfect restaurant with AI-powered personalized

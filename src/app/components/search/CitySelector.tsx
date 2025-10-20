@@ -55,7 +55,7 @@ export function CitySelector({
   };
 
   return (
-    <Card className="restaurant-card w-full max-w-md mx-auto">
+    <Card className="restaurant-card w-full max-w-sm sm:max-w-md mx-auto">
       <CardHeader className="pb-4">
         <CardTitle className="taste-title flex items-center gap-2">
           🍽️ Choose Your City
