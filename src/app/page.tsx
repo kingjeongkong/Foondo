@@ -2,7 +2,9 @@
 
 import { CitySelector } from '@/app/components/search/CitySelector';
 import { FoodSelector } from '@/app/components/search/FoodSelector';
+import { PrioritySelector } from '@/app/components/search/PrioritySelector';
 import type { City, SelectedFood } from '@/app/types/search';
+import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
 /**
@@ -12,6 +14,10 @@ import { useState } from 'react';
 export default function Home() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [selectedFood, setSelectedFood] = useState<SelectedFood | null>(null);
+  const [selectedPriorities, setSelectedPriorities] = useState<Record<
+    string,
+    number
+  > | null>(null);
   const [currentStep, setCurrentStep] = useState<
     'city' | 'food' | 'priority' | 'results'
   >('city');
@@ -24,11 +30,18 @@ export default function Home() {
     setSelectedFood(food);
   };
 
+  const handlePriorityComplete = (priorities: Record<string, number>) => {
+    setSelectedPriorities(priorities);
+    setCurrentStep('results');
+  };
+
   const handleBack = () => {
     if (currentStep === 'food') {
       setCurrentStep('city');
     } else if (currentStep === 'priority') {
       setCurrentStep('food');
+    } else if (currentStep === 'results') {
+      setCurrentStep('priority');
     }
   };
 
@@ -67,7 +80,37 @@ export default function Home() {
           </div>
         )}
 
-        {/* TODO: priority, results 단계 추가 */}
+        {currentStep === 'priority' && selectedCity && selectedFood && (
+          <div className="flex justify-center">
+            <PrioritySelector
+              onComplete={handlePriorityComplete}
+              onBack={handleBack}
+            />
+          </div>
+        )}
+
+        {currentStep === 'results' && (
+          <div className="flex flex-col gap-4 justify-center">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-4">
+                🎉 Results Coming Soon!
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Your preferences: {selectedCity?.name}, {selectedFood?.name}
+              </p>
+              <p className="text-sm text-gray-500">
+                Priority settings: {JSON.stringify(selectedPriorities)}
+              </p>
+            </div>
+            <Button
+              className="w-60 mx-auto"
+              onClick={handleBack}
+              variant="outline"
+            >
+              Back to Priority Selection
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

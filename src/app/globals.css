@@ -174,4 +174,90 @@
   .local-food {
     @apply border-green-200 hover:border-green-400;
   }
+
+  /* 우선순위 선택 스타일 */
+  .priority-item {
+    @apply rounded-2xl border-2 border-gray-200;
+    @apply hover:border-warm-taste hover:shadow-md;
+    @apply transition-all duration-200;
+    @apply cursor-pointer;
+  }
+
+  .priority-item:hover {
+    @apply transform scale-[1.02];
+  }
+
+  .hover\:scale-102:hover {
+    transform: scale(1.02);
+  }
+
+  .priority-slot {
+    @apply transition-all duration-200;
+  }
+
+  .priority-slot:hover {
+    @apply border-warm-taste bg-warm-taste/5;
+  }
+
+  /* 드래그 앤 드롭 애니메이션 */
+  @keyframes selectItem {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes dragItem {
+    0% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(1.1);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  @keyframes highlightDropZone {
+    0% {
+      background-color: transparent;
+    }
+    100% {
+      background-color: var(--color-warm-taste/10);
+    }
+  }
+
+  .priority-item.dragging {
+    animation: dragItem 0.2s ease-out;
+  }
+
+  .priority-slot.drag-over {
+    animation: highlightDropZone 0.2s ease-out;
+  }
+
+  /* 모바일 친화적 우선순위 아이템 */
+  .priority-item-mobile {
+    @apply min-h-[80px] sm:min-h-[100px] flex flex-col items-center justify-center;
+  }
+
+  /* 모바일에서 더 작은 패딩과 간격 */
+  @media (max-width: 640px) {
+    .priority-item {
+      @apply p-1.5;
+    }
+
+    .priority-slot {
+      @apply p-2;
+    }
+
+    .priority-item-mobile {
+      @apply min-h-[70px];
+    }
+  }
 }

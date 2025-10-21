@@ -19,6 +19,29 @@ export interface PrioritySettings {
   atmosphere: number;
   price: number;
   distance: number;
+  service: number;
+  quantity: number;
+}
+
+// 우선순위 항목 타입
+export interface PriorityItem {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  color: string;
+}
+
+// 선택된 우선순위 (1, 2, 3순위)
+export interface SelectedPriority {
+  rank: 1 | 2 | 3;
+  item: PriorityItem;
+}
+
+// 우선순위 선택 상태
+export interface PrioritySelectionState {
+  available: PriorityItem[];
+  selected: SelectedPriority[];
 }
 
 export interface CommonFood {
