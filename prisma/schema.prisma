@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. cities 테이블 모델
+model City {
+  id        BigInt   @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+  country   String?
+
+  foods       Food[]
+  restaurants Restaurant[]
+
+  @@unique([name, country])
+  @@map("cities")
+}
+
+// 2. foods 테이블 모델
+model Food {
+  id          BigInt   @id @default(autoincrement())
+  createdAt   DateTime @default(now()) @map("created_at")
+  cityId      BigInt   @map("city_id")
+  name        String
+  description String?
+
+  city City           @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@map("foods")
+}
+
+// 3. restaurants 테이블 모델
+model Restaurant {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  placeId   String   @unique @map("place_id")
+  cityId    BigInt?  @map("city_id")
+  name      String?
+  address   String?
+  photoUrl  String?  @map("photo_url")
+
+  city   City?       @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  report RestaurantReport?
+
+  @@map("restaurants")
+}
+
+// 4. restaurant_reports 테이블 모델
+model RestaurantReport {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lastUpdated         DateTime @default(now()) @updatedAt @map("last_updated")
+  restaurantId        String   @unique @map("restaurant_id") @db.Uuid
+  tasteScore          Float?   @map("taste_score") @db.Real
+  priceScore          Float?   @map("price_score") @db.Real
+  atmosphereScore     Float?   @map("atmosphere_score") @db.Real
+  serviceScore        Float?   @map("service_score") @db.Real
+  quantityScore       Float?   @map("quantity_score") @db.Real
+  accessibilityScore  Float?   @map("accessibility_score") @db.Real
+  aiSummary           String?  @map("ai_summary")
+
+  restaurant Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@map("restaurant_reports")
+}
