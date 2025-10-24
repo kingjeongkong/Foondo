@@ -1,6 +1,6 @@
 'use client';
 
-import type { City } from '@/app/types/search';
+import type { City } from '@/app/types/city';
 import { Button } from '@/components/ui/button';
 import {
   Card,

@@ -3,7 +3,8 @@
 import { CitySelector } from '@/app/components/search/CitySelector';
 import { FoodSelector } from '@/app/components/search/FoodSelector';
 import { PrioritySelector } from '@/app/components/search/PrioritySelector';
-import type { City, SelectedFood } from '@/app/types/search';
+import type { City } from '@/app/types/city';
+import type { SelectedFood } from '@/app/types/search';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
