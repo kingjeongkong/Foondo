@@ -1,5 +1,5 @@
 // Prisma 클라이언트 설정
-import { PrismaClient } from '@/generated/client';
+import { PrismaClient } from '@/generated/prisma/client';
 
 // 전역 Prisma 클라이언트 인스턴스 (개발 환경에서만)
 const globalForPrisma = globalThis as unknown as {
