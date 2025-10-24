@@ -19,25 +19,15 @@ export type RestaurantModel = runtime.Types.Result.DefaultSelection<Prisma.$Rest
 
 export type AggregateRestaurant = {
   _count: RestaurantCountAggregateOutputType | null
-  _avg: RestaurantAvgAggregateOutputType | null
-  _sum: RestaurantSumAggregateOutputType | null
   _min: RestaurantMinAggregateOutputType | null
   _max: RestaurantMaxAggregateOutputType | null
-}
-
-export type RestaurantAvgAggregateOutputType = {
-  cityId: number | null
-}
-
-export type RestaurantSumAggregateOutputType = {
-  cityId: bigint | null
 }
 
 export type RestaurantMinAggregateOutputType = {
   id: string | null
   createdAt: Date | null
   placeId: string | null
-  cityId: bigint | null
+  cityId: string | null
   name: string | null
   address: string | null
   photoUrl: string | null
@@ -47,7 +37,7 @@ export type RestaurantMaxAggregateOutputType = {
   id: string | null
   createdAt: Date | null
   placeId: string | null
-  cityId: bigint | null
+  cityId: string | null
   name: string | null
   address: string | null
   photoUrl: string | null
@@ -64,14 +54,6 @@ export type RestaurantCountAggregateOutputType = {
   _all: number
 }
 
-
-export type RestaurantAvgAggregateInputType = {
-  cityId?: true
-}
-
-export type RestaurantSumAggregateInputType = {
-  cityId?: true
-}
 
 export type RestaurantMinAggregateInputType = {
   id?: true
@@ -142,18 +124,6 @@ export type RestaurantAggregateArgs<ExtArgs extends runtime.Types.Extensions.Int
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
-   * Select which fields to average
-  **/
-  _avg?: RestaurantAvgAggregateInputType
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-   * 
-   * Select which fields to sum
-  **/
-  _sum?: RestaurantSumAggregateInputType
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-   * 
    * Select which fields to find the minimum value
   **/
   _min?: RestaurantMinAggregateInputType
@@ -184,8 +154,6 @@ export type RestaurantGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   _count?: RestaurantCountAggregateInputType | true
-  _avg?: RestaurantAvgAggregateInputType
-  _sum?: RestaurantSumAggregateInputType
   _min?: RestaurantMinAggregateInputType
   _max?: RestaurantMaxAggregateInputType
 }
@@ -194,13 +162,11 @@ export type RestaurantGroupByOutputType = {
   id: string
   createdAt: Date
   placeId: string
-  cityId: bigint | null
+  cityId: string | null
   name: string | null
   address: string | null
   photoUrl: string | null
   _count: RestaurantCountAggregateOutputType | null
-  _avg: RestaurantAvgAggregateOutputType | null
-  _sum: RestaurantSumAggregateOutputType | null
   _min: RestaurantMinAggregateOutputType | null
   _max: RestaurantMaxAggregateOutputType | null
 }
@@ -227,7 +193,7 @@ export type RestaurantWhereInput = {
   id?: Prisma.UuidFilter<"Restaurant"> | string
   createdAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
   placeId?: Prisma.StringFilter<"Restaurant"> | string
-  cityId?: Prisma.BigIntNullableFilter<"Restaurant"> | bigint | number | null
+  cityId?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   name?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   address?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   photoUrl?: Prisma.StringNullableFilter<"Restaurant"> | string | null
@@ -254,7 +220,7 @@ export type RestaurantWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.RestaurantWhereInput[]
   NOT?: Prisma.RestaurantWhereInput | Prisma.RestaurantWhereInput[]
   createdAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
-  cityId?: Prisma.BigIntNullableFilter<"Restaurant"> | bigint | number | null
+  cityId?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   name?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   address?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   photoUrl?: Prisma.StringNullableFilter<"Restaurant"> | string | null
@@ -271,10 +237,8 @@ export type RestaurantOrderByWithAggregationInput = {
   address?: Prisma.SortOrderInput | Prisma.SortOrder
   photoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.RestaurantCountOrderByAggregateInput
-  _avg?: Prisma.RestaurantAvgOrderByAggregateInput
   _max?: Prisma.RestaurantMaxOrderByAggregateInput
   _min?: Prisma.RestaurantMinOrderByAggregateInput
-  _sum?: Prisma.RestaurantSumOrderByAggregateInput
 }
 
 export type RestaurantScalarWhereWithAggregatesInput = {
@@ -284,7 +248,7 @@ export type RestaurantScalarWhereWithAggregatesInput = {
   id?: Prisma.UuidWithAggregatesFilter<"Restaurant"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Restaurant"> | Date | string
   placeId?: Prisma.StringWithAggregatesFilter<"Restaurant"> | string
-  cityId?: Prisma.BigIntNullableWithAggregatesFilter<"Restaurant"> | bigint | number | null
+  cityId?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   name?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   address?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
   photoUrl?: Prisma.StringNullableWithAggregatesFilter<"Restaurant"> | string | null
@@ -305,7 +269,7 @@ export type RestaurantUncheckedCreateInput = {
   id?: string
   createdAt?: Date | string
   placeId: string
-  cityId?: bigint | number | null
+  cityId?: string | null
   name?: string | null
   address?: string | null
   photoUrl?: string | null
@@ -327,7 +291,7 @@ export type RestaurantUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   placeId?: Prisma.StringFieldUpdateOperationsInput | string
-  cityId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  cityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -338,7 +302,7 @@ export type RestaurantCreateManyInput = {
   id?: string
   createdAt?: Date | string
   placeId: string
-  cityId?: bigint | number | null
+  cityId?: string | null
   name?: string | null
   address?: string | null
   photoUrl?: string | null
@@ -357,7 +321,7 @@ export type RestaurantUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   placeId?: Prisma.StringFieldUpdateOperationsInput | string
-  cityId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  cityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -383,10 +347,6 @@ export type RestaurantCountOrderByAggregateInput = {
   photoUrl?: Prisma.SortOrder
 }
 
-export type RestaurantAvgOrderByAggregateInput = {
-  cityId?: Prisma.SortOrder
-}
-
 export type RestaurantMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -405,10 +365,6 @@ export type RestaurantMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   address?: Prisma.SortOrder
   photoUrl?: Prisma.SortOrder
-}
-
-export type RestaurantSumOrderByAggregateInput = {
-  cityId?: Prisma.SortOrder
 }
 
 export type RestaurantScalarRelationFilter = {
@@ -456,14 +412,6 @@ export type RestaurantUncheckedUpdateManyWithoutCityNestedInput = {
   update?: Prisma.RestaurantUpdateWithWhereUniqueWithoutCityInput | Prisma.RestaurantUpdateWithWhereUniqueWithoutCityInput[]
   updateMany?: Prisma.RestaurantUpdateManyWithWhereWithoutCityInput | Prisma.RestaurantUpdateManyWithWhereWithoutCityInput[]
   deleteMany?: Prisma.RestaurantScalarWhereInput | Prisma.RestaurantScalarWhereInput[]
-}
-
-export type NullableBigIntFieldUpdateOperationsInput = {
-  set?: bigint | number | null
-  increment?: bigint | number
-  decrement?: bigint | number
-  multiply?: bigint | number
-  divide?: bigint | number
 }
 
 export type RestaurantCreateNestedOneWithoutReportInput = {
@@ -533,7 +481,7 @@ export type RestaurantScalarWhereInput = {
   id?: Prisma.UuidFilter<"Restaurant"> | string
   createdAt?: Prisma.DateTimeFilter<"Restaurant"> | Date | string
   placeId?: Prisma.StringFilter<"Restaurant"> | string
-  cityId?: Prisma.BigIntNullableFilter<"Restaurant"> | bigint | number | null
+  cityId?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   name?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   address?: Prisma.StringNullableFilter<"Restaurant"> | string | null
   photoUrl?: Prisma.StringNullableFilter<"Restaurant"> | string | null
@@ -553,7 +501,7 @@ export type RestaurantUncheckedCreateWithoutReportInput = {
   id?: string
   createdAt?: Date | string
   placeId: string
-  cityId?: bigint | number | null
+  cityId?: string | null
   name?: string | null
   address?: string | null
   photoUrl?: string | null
@@ -589,7 +537,7 @@ export type RestaurantUncheckedUpdateWithoutReportInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   placeId?: Prisma.StringFieldUpdateOperationsInput | string
-  cityId?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  cityId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   photoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -701,7 +649,7 @@ export type $RestaurantPayload<ExtArgs extends runtime.Types.Extensions.Internal
     id: string
     createdAt: Date
     placeId: string
-    cityId: bigint | null
+    cityId: string | null
     name: string | null
     address: string | null
     photoUrl: string | null
@@ -1133,7 +1081,7 @@ export interface RestaurantFieldRefs {
   readonly id: Prisma.FieldRef<"Restaurant", 'String'>
   readonly createdAt: Prisma.FieldRef<"Restaurant", 'DateTime'>
   readonly placeId: Prisma.FieldRef<"Restaurant", 'String'>
-  readonly cityId: Prisma.FieldRef<"Restaurant", 'BigInt'>
+  readonly cityId: Prisma.FieldRef<"Restaurant", 'String'>
   readonly name: Prisma.FieldRef<"Restaurant", 'String'>
   readonly address: Prisma.FieldRef<"Restaurant", 'String'>
   readonly photoUrl: Prisma.FieldRef<"Restaurant", 'String'>

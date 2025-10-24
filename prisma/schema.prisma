@@ -13,7 +13,7 @@ datasource db {
 
 // 1. cities 테이블 모델
 model City {
-  id        BigInt   @id @default(autoincrement())
+  id        String   @id // Mapbox place ID를 직접 사용
   createdAt DateTime @default(now()) @map("created_at")
   name      String
   country   String?
@@ -29,7 +29,7 @@ model City {
 model Food {
   id          BigInt   @id @default(autoincrement())
   createdAt   DateTime @default(now()) @map("created_at")
-  cityId      BigInt   @map("city_id")
+  cityId      String   @map("city_id")
   name        String
   description String?
 
@@ -43,7 +43,7 @@ model Restaurant {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
   placeId   String   @unique @map("place_id")
-  cityId    BigInt?  @map("city_id")
+  cityId    String?  @map("city_id")
   name      String?
   address   String?
   photoUrl  String?  @map("photo_url")

@@ -19,29 +19,19 @@ export type CityModel = runtime.Types.Result.DefaultSelection<Prisma.$CityPayloa
 
 export type AggregateCity = {
   _count: CityCountAggregateOutputType | null
-  _avg: CityAvgAggregateOutputType | null
-  _sum: CitySumAggregateOutputType | null
   _min: CityMinAggregateOutputType | null
   _max: CityMaxAggregateOutputType | null
 }
 
-export type CityAvgAggregateOutputType = {
-  id: number | null
-}
-
-export type CitySumAggregateOutputType = {
-  id: bigint | null
-}
-
 export type CityMinAggregateOutputType = {
-  id: bigint | null
+  id: string | null
   createdAt: Date | null
   name: string | null
   country: string | null
 }
 
 export type CityMaxAggregateOutputType = {
-  id: bigint | null
+  id: string | null
   createdAt: Date | null
   name: string | null
   country: string | null
@@ -55,14 +45,6 @@ export type CityCountAggregateOutputType = {
   _all: number
 }
 
-
-export type CityAvgAggregateInputType = {
-  id?: true
-}
-
-export type CitySumAggregateInputType = {
-  id?: true
-}
 
 export type CityMinAggregateInputType = {
   id?: true
@@ -124,18 +106,6 @@ export type CityAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
-   * Select which fields to average
-  **/
-  _avg?: CityAvgAggregateInputType
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-   * 
-   * Select which fields to sum
-  **/
-  _sum?: CitySumAggregateInputType
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-   * 
    * Select which fields to find the minimum value
   **/
   _min?: CityMinAggregateInputType
@@ -166,20 +136,16 @@ export type CityGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   _count?: CityCountAggregateInputType | true
-  _avg?: CityAvgAggregateInputType
-  _sum?: CitySumAggregateInputType
   _min?: CityMinAggregateInputType
   _max?: CityMaxAggregateInputType
 }
 
 export type CityGroupByOutputType = {
-  id: bigint
+  id: string
   createdAt: Date
   name: string
   country: string | null
   _count: CityCountAggregateOutputType | null
-  _avg: CityAvgAggregateOutputType | null
-  _sum: CitySumAggregateOutputType | null
   _min: CityMinAggregateOutputType | null
   _max: CityMaxAggregateOutputType | null
 }
@@ -203,7 +169,7 @@ export type CityWhereInput = {
   AND?: Prisma.CityWhereInput | Prisma.CityWhereInput[]
   OR?: Prisma.CityWhereInput[]
   NOT?: Prisma.CityWhereInput | Prisma.CityWhereInput[]
-  id?: Prisma.BigIntFilter<"City"> | bigint | number
+  id?: Prisma.StringFilter<"City"> | string
   createdAt?: Prisma.DateTimeFilter<"City"> | Date | string
   name?: Prisma.StringFilter<"City"> | string
   country?: Prisma.StringNullableFilter<"City"> | string | null
@@ -221,7 +187,7 @@ export type CityOrderByWithRelationInput = {
 }
 
 export type CityWhereUniqueInput = Prisma.AtLeast<{
-  id?: bigint | number
+  id?: string
   name_country?: Prisma.CityNameCountryCompoundUniqueInput
   AND?: Prisma.CityWhereInput | Prisma.CityWhereInput[]
   OR?: Prisma.CityWhereInput[]
@@ -239,24 +205,22 @@ export type CityOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   country?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.CityCountOrderByAggregateInput
-  _avg?: Prisma.CityAvgOrderByAggregateInput
   _max?: Prisma.CityMaxOrderByAggregateInput
   _min?: Prisma.CityMinOrderByAggregateInput
-  _sum?: Prisma.CitySumOrderByAggregateInput
 }
 
 export type CityScalarWhereWithAggregatesInput = {
   AND?: Prisma.CityScalarWhereWithAggregatesInput | Prisma.CityScalarWhereWithAggregatesInput[]
   OR?: Prisma.CityScalarWhereWithAggregatesInput[]
   NOT?: Prisma.CityScalarWhereWithAggregatesInput | Prisma.CityScalarWhereWithAggregatesInput[]
-  id?: Prisma.BigIntWithAggregatesFilter<"City"> | bigint | number
+  id?: Prisma.StringWithAggregatesFilter<"City"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"City"> | Date | string
   name?: Prisma.StringWithAggregatesFilter<"City"> | string
   country?: Prisma.StringNullableWithAggregatesFilter<"City"> | string | null
 }
 
 export type CityCreateInput = {
-  id?: bigint | number
+  id: string
   createdAt?: Date | string
   name: string
   country?: string | null
@@ -265,7 +229,7 @@ export type CityCreateInput = {
 }
 
 export type CityUncheckedCreateInput = {
-  id?: bigint | number
+  id: string
   createdAt?: Date | string
   name: string
   country?: string | null
@@ -274,7 +238,7 @@ export type CityUncheckedCreateInput = {
 }
 
 export type CityUpdateInput = {
-  id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -283,7 +247,7 @@ export type CityUpdateInput = {
 }
 
 export type CityUncheckedUpdateInput = {
-  id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -292,21 +256,21 @@ export type CityUncheckedUpdateInput = {
 }
 
 export type CityCreateManyInput = {
-  id?: bigint | number
+  id: string
   createdAt?: Date | string
   name: string
   country?: string | null
 }
 
 export type CityUpdateManyMutationInput = {
-  id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type CityUncheckedUpdateManyInput = {
-  id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -324,10 +288,6 @@ export type CityCountOrderByAggregateInput = {
   country?: Prisma.SortOrder
 }
 
-export type CityAvgOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-}
-
 export type CityMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -342,10 +302,6 @@ export type CityMinOrderByAggregateInput = {
   country?: Prisma.SortOrder
 }
 
-export type CitySumOrderByAggregateInput = {
-  id?: Prisma.SortOrder
-}
-
 export type CityScalarRelationFilter = {
   is?: Prisma.CityWhereInput
   isNot?: Prisma.CityWhereInput
@@ -356,20 +312,12 @@ export type CityNullableScalarRelationFilter = {
   isNot?: Prisma.CityWhereInput | null
 }
 
-export type BigIntFieldUpdateOperationsInput = {
-  set?: bigint | number
-  increment?: bigint | number
-  decrement?: bigint | number
-  multiply?: bigint | number
-  divide?: bigint | number
+export type StringFieldUpdateOperationsInput = {
+  set?: string
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
-}
-
-export type StringFieldUpdateOperationsInput = {
-  set?: string
 }
 
 export type NullableStringFieldUpdateOperationsInput = {
@@ -407,7 +355,7 @@ export type CityUpdateOneWithoutRestaurantsNestedInput = {
 }
 
 export type CityCreateWithoutFoodsInput = {
-  id?: bigint | number
+  id: string
   createdAt?: Date | string
   name: string
   country?: string | null
@@ -415,7 +363,7 @@ export type CityCreateWithoutFoodsInput = {
 }
 
 export type CityUncheckedCreateWithoutFoodsInput = {
-  id?: bigint | number
+  id: string
   createdAt?: Date | string
   name: string
   country?: string | null
@@ -439,7 +387,7 @@ export type CityUpdateToOneWithWhereWithoutFoodsInput = {
 }
 
 export type CityUpdateWithoutFoodsInput = {
-  id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -447,7 +395,7 @@ export type CityUpdateWithoutFoodsInput = {
 }
 
 export type CityUncheckedUpdateWithoutFoodsInput = {
-  id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -455,7 +403,7 @@ export type CityUncheckedUpdateWithoutFoodsInput = {
 }
 
 export type CityCreateWithoutRestaurantsInput = {
-  id?: bigint | number
+  id: string
   createdAt?: Date | string
   name: string
   country?: string | null
@@ -463,7 +411,7 @@ export type CityCreateWithoutRestaurantsInput = {
 }
 
 export type CityUncheckedCreateWithoutRestaurantsInput = {
-  id?: bigint | number
+  id: string
   createdAt?: Date | string
   name: string
   country?: string | null
@@ -487,7 +435,7 @@ export type CityUpdateToOneWithWhereWithoutRestaurantsInput = {
 }
 
 export type CityUpdateWithoutRestaurantsInput = {
-  id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -495,7 +443,7 @@ export type CityUpdateWithoutRestaurantsInput = {
 }
 
 export type CityUncheckedUpdateWithoutRestaurantsInput = {
-  id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   country?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -589,7 +537,7 @@ export type $CityPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     restaurants: Prisma.$RestaurantPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
-    id: bigint
+    id: string
     createdAt: Date
     name: string
     country: string | null
@@ -1018,7 +966,7 @@ export interface Prisma__CityClient<T, Null = never, ExtArgs extends runtime.Typ
  * Fields of the City model
  */
 export interface CityFieldRefs {
-  readonly id: Prisma.FieldRef<"City", 'BigInt'>
+  readonly id: Prisma.FieldRef<"City", 'String'>
   readonly createdAt: Prisma.FieldRef<"City", 'DateTime'>
   readonly name: Prisma.FieldRef<"City", 'String'>
   readonly country: Prisma.FieldRef<"City", 'String'>
