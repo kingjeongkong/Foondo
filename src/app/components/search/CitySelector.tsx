@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useState } from 'react';
 import LocationAutocomplete from './LocationAutocomplete';
 
 export interface CitySelectorProps {
@@ -17,6 +16,7 @@ export interface CitySelectorProps {
   onNext: () => void;
   selectedCity?: City | null;
   disabled?: boolean;
+  isLoading?: boolean;
 }
 
 /**
@@ -30,15 +30,12 @@ export function CitySelector({
   onNext,
   selectedCity,
   disabled = false,
+  isLoading = false,
 }: CitySelectorProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
   const handleLocationSelect = (
     location: { city: string; country: string; location_id: string } | null
   ) => {
-    if (disabled || isLoading || !location) return;
-
-    setIsLoading(true);
+    if (disabled || !location) return;
 
     try {
       // Mapbox 결과를 City 타입으로 변환
@@ -51,8 +48,6 @@ export function CitySelector({
       onCitySelect(city);
     } catch (error) {
       console.error('도시 선택 중 오류 발생:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -80,15 +75,12 @@ export function CitySelector({
               onClick={onNext}
               disabled={disabled || isLoading}
             >
-              Get Recommendations of {selectedCity.name}&apos;s food
+              {isLoading ? (
+                <span className="animate-spin">⏳</span>
+              ) : (
+                `Get Recommendations of ${selectedCity.name}&apos;s food`
+              )}
             </Button>
-          </div>
-        )}
-
-        {isLoading && (
-          <div className="text-center text-sm text-gray-500 flex items-center justify-center gap-2">
-            <span className="animate-spin">⏳</span>
-            <span>Finding the best cities...</span>
           </div>
         )}
       </CardContent>
