@@ -1,0 +1,46 @@
+# .github/workflows/ci.yml
+
+name: CI # 이 워크플로우의 이름
+
+# 언제 이 워크플로우를 실행할 것인가: main 브랜치로 Pull Request가 생성/업데이트될 때
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest # 실행 환경
+
+    steps:
+      # 1. 코드를 체크아웃(다운로드)합니다.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. pnpm 설치
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8 # package.json에 맞는 버전 사용
+
+      # 3. Node.js 환경 설정
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      # 4. 의존성 패키지 설치
+      - name: Install dependencies
+        run: pnpm install
+
+      # 5. Prisma Client 생성 (Vercel 배포 에러 방지)
+      - name: Generate Prisma Client
+        run: pnpm run prisma:generate
+
+      # 6. 코드 린트 검사 실행
+      - name: Run ESLint
+        run: pnpm run lint
+
+      # 7. 타입스크립트 타입 체크 및 빌드 테스트 실행
+      - name: Run Build
+        run: pnpm run build
