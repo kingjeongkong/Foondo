@@ -27,18 +27,16 @@ export type AggregateFood = {
 
 export type FoodAvgAggregateOutputType = {
   id: number | null
-  cityId: number | null
 }
 
 export type FoodSumAggregateOutputType = {
   id: bigint | null
-  cityId: bigint | null
 }
 
 export type FoodMinAggregateOutputType = {
   id: bigint | null
   createdAt: Date | null
-  cityId: bigint | null
+  cityId: string | null
   name: string | null
   description: string | null
 }
@@ -46,7 +44,7 @@ export type FoodMinAggregateOutputType = {
 export type FoodMaxAggregateOutputType = {
   id: bigint | null
   createdAt: Date | null
-  cityId: bigint | null
+  cityId: string | null
   name: string | null
   description: string | null
 }
@@ -63,12 +61,10 @@ export type FoodCountAggregateOutputType = {
 
 export type FoodAvgAggregateInputType = {
   id?: true
-  cityId?: true
 }
 
 export type FoodSumAggregateInputType = {
   id?: true
-  cityId?: true
 }
 
 export type FoodMinAggregateInputType = {
@@ -185,7 +181,7 @@ export type FoodGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type FoodGroupByOutputType = {
   id: bigint
   createdAt: Date
-  cityId: bigint
+  cityId: string
   name: string
   description: string | null
   _count: FoodCountAggregateOutputType | null
@@ -216,7 +212,7 @@ export type FoodWhereInput = {
   NOT?: Prisma.FoodWhereInput | Prisma.FoodWhereInput[]
   id?: Prisma.BigIntFilter<"Food"> | bigint | number
   createdAt?: Prisma.DateTimeFilter<"Food"> | Date | string
-  cityId?: Prisma.BigIntFilter<"Food"> | bigint | number
+  cityId?: Prisma.StringFilter<"Food"> | string
   name?: Prisma.StringFilter<"Food"> | string
   description?: Prisma.StringNullableFilter<"Food"> | string | null
   city?: Prisma.XOR<Prisma.CityScalarRelationFilter, Prisma.CityWhereInput>
@@ -237,7 +233,7 @@ export type FoodWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.FoodWhereInput[]
   NOT?: Prisma.FoodWhereInput | Prisma.FoodWhereInput[]
   createdAt?: Prisma.DateTimeFilter<"Food"> | Date | string
-  cityId?: Prisma.BigIntFilter<"Food"> | bigint | number
+  cityId?: Prisma.StringFilter<"Food"> | string
   name?: Prisma.StringFilter<"Food"> | string
   description?: Prisma.StringNullableFilter<"Food"> | string | null
   city?: Prisma.XOR<Prisma.CityScalarRelationFilter, Prisma.CityWhereInput>
@@ -262,7 +258,7 @@ export type FoodScalarWhereWithAggregatesInput = {
   NOT?: Prisma.FoodScalarWhereWithAggregatesInput | Prisma.FoodScalarWhereWithAggregatesInput[]
   id?: Prisma.BigIntWithAggregatesFilter<"Food"> | bigint | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Food"> | Date | string
-  cityId?: Prisma.BigIntWithAggregatesFilter<"Food"> | bigint | number
+  cityId?: Prisma.StringWithAggregatesFilter<"Food"> | string
   name?: Prisma.StringWithAggregatesFilter<"Food"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"Food"> | string | null
 }
@@ -278,7 +274,7 @@ export type FoodCreateInput = {
 export type FoodUncheckedCreateInput = {
   id?: bigint | number
   createdAt?: Date | string
-  cityId: bigint | number
+  cityId: string
   name: string
   description?: string | null
 }
@@ -294,7 +290,7 @@ export type FoodUpdateInput = {
 export type FoodUncheckedUpdateInput = {
   id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  cityId?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  cityId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -302,7 +298,7 @@ export type FoodUncheckedUpdateInput = {
 export type FoodCreateManyInput = {
   id?: bigint | number
   createdAt?: Date | string
-  cityId: bigint | number
+  cityId: string
   name: string
   description?: string | null
 }
@@ -317,7 +313,7 @@ export type FoodUpdateManyMutationInput = {
 export type FoodUncheckedUpdateManyInput = {
   id?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  cityId?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  cityId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -342,7 +338,6 @@ export type FoodCountOrderByAggregateInput = {
 
 export type FoodAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  cityId?: Prisma.SortOrder
 }
 
 export type FoodMaxOrderByAggregateInput = {
@@ -363,7 +358,6 @@ export type FoodMinOrderByAggregateInput = {
 
 export type FoodSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  cityId?: Prisma.SortOrder
 }
 
 export type FoodCreateNestedManyWithoutCityInput = {
@@ -406,6 +400,14 @@ export type FoodUncheckedUpdateManyWithoutCityNestedInput = {
   update?: Prisma.FoodUpdateWithWhereUniqueWithoutCityInput | Prisma.FoodUpdateWithWhereUniqueWithoutCityInput[]
   updateMany?: Prisma.FoodUpdateManyWithWhereWithoutCityInput | Prisma.FoodUpdateManyWithWhereWithoutCityInput[]
   deleteMany?: Prisma.FoodScalarWhereInput | Prisma.FoodScalarWhereInput[]
+}
+
+export type BigIntFieldUpdateOperationsInput = {
+  set?: bigint | number
+  increment?: bigint | number
+  decrement?: bigint | number
+  multiply?: bigint | number
+  divide?: bigint | number
 }
 
 export type FoodCreateWithoutCityInput = {
@@ -454,7 +456,7 @@ export type FoodScalarWhereInput = {
   NOT?: Prisma.FoodScalarWhereInput | Prisma.FoodScalarWhereInput[]
   id?: Prisma.BigIntFilter<"Food"> | bigint | number
   createdAt?: Prisma.DateTimeFilter<"Food"> | Date | string
-  cityId?: Prisma.BigIntFilter<"Food"> | bigint | number
+  cityId?: Prisma.StringFilter<"Food"> | string
   name?: Prisma.StringFilter<"Food"> | string
   description?: Prisma.StringNullableFilter<"Food"> | string | null
 }
@@ -543,7 +545,7 @@ export type $FoodPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: bigint
     createdAt: Date
-    cityId: bigint
+    cityId: string
     name: string
     description: string | null
   }, ExtArgs["result"]["food"]>
@@ -972,7 +974,7 @@ export interface Prisma__FoodClient<T, Null = never, ExtArgs extends runtime.Typ
 export interface FoodFieldRefs {
   readonly id: Prisma.FieldRef<"Food", 'BigInt'>
   readonly createdAt: Prisma.FieldRef<"Food", 'DateTime'>
-  readonly cityId: Prisma.FieldRef<"Food", 'BigInt'>
+  readonly cityId: Prisma.FieldRef<"Food", 'String'>
   readonly name: Prisma.FieldRef<"Food", 'String'>
   readonly description: Prisma.FieldRef<"Food", 'String'>
 }

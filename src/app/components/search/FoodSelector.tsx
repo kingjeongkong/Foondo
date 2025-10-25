@@ -1,7 +1,8 @@
 'use client';
 
 import { COMMON_FOODS, LOCAL_FOODS } from '@/app/data/foods';
-import type { City, SelectedFood } from '@/app/types/search';
+import type { City } from '@/app/types/city';
+import type { SelectedFood } from '@/app/types/search';
 import { Button } from '@/components/ui/button';
 import {
   Card,

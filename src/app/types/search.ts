@@ -1,12 +1,4 @@
-/**
- * 검색 관련 타입 정의
- */
-
-export interface City {
-  id: string;
-  name: string;
-  country: string;
-}
+import type { City } from '@/app/types/city';
 
 export interface SearchState {
   selectedCity: City | null;

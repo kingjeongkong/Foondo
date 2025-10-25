@@ -3,9 +3,11 @@
 import { CitySelector } from '@/app/components/search/CitySelector';
 import { FoodSelector } from '@/app/components/search/FoodSelector';
 import { PrioritySelector } from '@/app/components/search/PrioritySelector';
-import type { City, SelectedFood } from '@/app/types/search';
+import type { City, CreateCityRequest } from '@/app/types/city';
+import type { SelectedFood } from '@/app/types/search';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { useCity } from './hooks/useCity';
 
 /**
  * 메인 페이지 컴포넌트
@@ -22,6 +24,8 @@ export default function Home() {
     'city' | 'food' | 'priority' | 'results'
   >('city');
 
+  const { createCity, isCreatingCity } = useCity();
+
   const handleCitySelect = (city: City) => {
     setSelectedCity(city);
   };
@@ -33,6 +37,21 @@ export default function Home() {
   const handlePriorityComplete = (priorities: Record<string, number>) => {
     setSelectedPriorities(priorities);
     setCurrentStep('results');
+  };
+
+  const handleNext = async () => {
+    if (currentStep === 'city') {
+      const requestData: CreateCityRequest = {
+        mapboxId: selectedCity?.id ?? '',
+        name: selectedCity?.name ?? '',
+        country: selectedCity?.country ?? '',
+      };
+      await createCity(requestData).then(() => {
+        setCurrentStep('food');
+      });
+    } else if (currentStep === 'food') {
+      setCurrentStep('priority');
+    }
   };
 
   const handleBack = () => {
@@ -62,8 +81,9 @@ export default function Home() {
           <div className="flex justify-center">
             <CitySelector
               onCitySelect={handleCitySelect}
-              onNext={() => setCurrentStep('food')}
+              onNext={handleNext}
               selectedCity={selectedCity}
+              isLoading={isCreatingCity}
             />
           </div>
         )}
@@ -74,7 +94,7 @@ export default function Home() {
               selectedCity={selectedCity}
               selectedFood={selectedFood}
               onFoodSelect={handleFoodSelect}
-              onNext={() => setCurrentStep('priority')}
+              onNext={handleNext}
               onBack={handleBack}
             />
           </div>
