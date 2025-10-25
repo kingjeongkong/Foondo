@@ -4,10 +4,11 @@ import { CitySelector } from '@/app/components/search/CitySelector';
 import { FoodSelector } from '@/app/components/search/FoodSelector';
 import { PrioritySelector } from '@/app/components/search/PrioritySelector';
 import type { City, CreateCityRequest } from '@/app/types/city';
-import type { SelectedFood } from '@/app/types/search';
+import type { Food } from '@/app/types/food';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useCity } from './hooks/useCity';
+import { useFood } from './hooks/useFood';
 
 /**
  * 메인 페이지 컴포넌트
@@ -15,7 +16,7 @@ import { useCity } from './hooks/useCity';
  */
 export default function Home() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [selectedFood, setSelectedFood] = useState<SelectedFood | null>(null);
+  const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [selectedPriorities, setSelectedPriorities] = useState<Record<
     string,
     number
@@ -25,12 +26,13 @@ export default function Home() {
   >('city');
 
   const { createCity, isCreatingCity } = useCity();
+  const { localFoods, isLoadingFoods } = useFood(selectedCity?.id ?? '');
 
   const handleCitySelect = (city: City) => {
     setSelectedCity(city);
   };
 
-  const handleFoodSelect = (food: SelectedFood) => {
+  const handleFoodSelect = (food: Food) => {
     setSelectedFood(food);
   };
 
@@ -65,7 +67,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 py-4 md:py-8">
+    <div className="min-h-screen bg-linear-to-br from-orange-50 via-amber-50 to-yellow-50 py-4 md:py-8">
       <div className="container mx-auto px-4">
         {/* 헤더 */}
         <div className="text-center mb-8 md:mb-12">
@@ -91,11 +93,13 @@ export default function Home() {
         {currentStep === 'food' && selectedCity && (
           <div className="flex justify-center">
             <FoodSelector
+              localFoods={localFoods}
               selectedCity={selectedCity}
               selectedFood={selectedFood}
               onFoodSelect={handleFoodSelect}
               onNext={handleNext}
               onBack={handleBack}
+              isLoading={isLoadingFoods}
             />
           </div>
         )}

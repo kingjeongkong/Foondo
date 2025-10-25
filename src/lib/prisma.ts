@@ -7,7 +7,17 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Prisma 클라이언트 생성 (싱글톤 패턴)
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL + '&prepared_statements=false',
+      },
+    },
+    // Prepared Statement 비활성화
+    log: ['error'],
+  });
 
 // 개발 환경에서만 전역 변수에 저장
 if (process.env.NODE_ENV !== 'production') {
