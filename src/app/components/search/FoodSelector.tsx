@@ -1,6 +1,6 @@
 'use client';
 
-import { COMMON_FOODS, LOCAL_FOODS } from '@/app/data/foods';
+import { COMMON_FOODS } from '@/app/data/foods';
 import type { City } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
 import { Button } from '@/components/ui/button';
@@ -16,30 +16,36 @@ import { useEffect, useRef, useState } from 'react';
 import { FoodCard } from './FoodCard';
 
 export interface FoodSelectorProps {
+  localFoods: Food[];
   selectedCity: City;
   selectedFood?: Food | null;
   onFoodSelect: (food: Food) => void;
   onNext: () => void;
   onBack: () => void;
   disabled?: boolean;
+  isLoading?: boolean;
 }
 
 /**
  * 음식 선택 컴포넌트
+ * @param {Food[]} localFoods - 로컬 음식 목록
  * @param {City} selectedCity - 선택된 도시
  * @param {Food} selectedFood - 선택된 음식
  * @param {Function} onFoodSelect - 음식 선택 시 호출되는 콜백
  * @param {Function} onNext - 다음 단계로 이동 시 호출되는 콜백
  * @param {Function} onBack - 뒤로가기 시 호출되는 콜백
  * @param {boolean} [disabled] - 비활성화 상태
+ * @param {boolean} [isLoading] - 로딩 상태
  */
 export function FoodSelector({
+  localFoods,
   selectedCity,
   selectedFood,
   onFoodSelect,
   onNext,
   onBack,
   disabled = false,
+  isLoading = false,
 }: FoodSelectorProps) {
   const [activeTab, setActiveTab] = useState<'common' | 'local'>('common');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -105,8 +111,12 @@ export function FoodSelector({
                   isSelected={selectedFood?.id === food.id}
                 />
               ))}
-            {activeTab === 'local' &&
-              LOCAL_FOODS.map((food) => (
+            {activeTab === 'local' && isLoading ? (
+              <div className="flex justify-center items-center">
+                <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              localFoods.map((food) => (
                 <FoodCard
                   key={food.id}
                   food={food}
@@ -115,7 +125,8 @@ export function FoodSelector({
                   disabled={disabled}
                   isSelected={selectedFood?.id === food.id}
                 />
-              ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -146,16 +157,22 @@ export function FoodSelector({
               {selectedCity.name}&apos;s Local Foods
             </h3>
             <div className="space-y-2 max-h-60 overflow-y-auto p-2">
-              {LOCAL_FOODS.map((food) => (
-                <FoodCard
-                  key={food.id}
-                  food={food}
-                  onSelect={() => onFoodSelect(food)}
-                  isLocal={true}
-                  disabled={disabled}
-                  isSelected={selectedFood?.id === food.id}
-                />
-              ))}
+              {isLoading ? (
+                <div className="flex justify-center items-center">
+                  <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                localFoods.map((food) => (
+                  <FoodCard
+                    key={food.id}
+                    food={food}
+                    onSelect={() => onFoodSelect(food)}
+                    isLocal={true}
+                    disabled={disabled}
+                    isSelected={selectedFood?.id === food.id}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>

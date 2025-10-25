@@ -8,6 +8,7 @@ import type { Food } from '@/app/types/food';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useCity } from './hooks/useCity';
+import { useFood } from './hooks/useFood';
 
 /**
  * 메인 페이지 컴포넌트
@@ -25,6 +26,7 @@ export default function Home() {
   >('city');
 
   const { createCity, isCreatingCity } = useCity();
+  const { localFoods, isLoadingFoods } = useFood(selectedCity?.id ?? '');
 
   const handleCitySelect = (city: City) => {
     setSelectedCity(city);
@@ -65,7 +67,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 py-4 md:py-8">
+    <div className="min-h-screen bg-linear-to-br from-orange-50 via-amber-50 to-yellow-50 py-4 md:py-8">
       <div className="container mx-auto px-4">
         {/* 헤더 */}
         <div className="text-center mb-8 md:mb-12">
@@ -91,11 +93,13 @@ export default function Home() {
         {currentStep === 'food' && selectedCity && (
           <div className="flex justify-center">
             <FoodSelector
+              localFoods={localFoods}
               selectedCity={selectedCity}
               selectedFood={selectedFood}
               onFoodSelect={handleFoodSelect}
               onNext={handleNext}
               onBack={handleBack}
+              isLoading={isLoadingFoods}
             />
           </div>
         )}
