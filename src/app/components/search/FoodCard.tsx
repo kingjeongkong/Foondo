@@ -1,10 +1,10 @@
 'use client';
 
-import type { CommonFood, LocalFood } from '@/app/types/search';
+import type { Food } from '@/app/types/food';
 import { Card, CardContent } from '@/components/ui/card';
 
 export interface FoodCardProps {
-  food: CommonFood | LocalFood;
+  food: Food;
   onSelect: () => void;
   isLocal?: boolean;
   disabled?: boolean;
@@ -39,7 +39,6 @@ export function FoodCard({
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          <div className="text-2xl">{food.emoji}</div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-sm text-gray-900 truncate">
               {food.name}

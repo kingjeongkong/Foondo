@@ -2,7 +2,7 @@
 
 import { COMMON_FOODS, LOCAL_FOODS } from '@/app/data/foods';
 import type { City } from '@/app/types/city';
-import type { SelectedFood } from '@/app/types/search';
+import type { Food } from '@/app/types/food';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -17,8 +17,8 @@ import { FoodCard } from './FoodCard';
 
 export interface FoodSelectorProps {
   selectedCity: City;
-  selectedFood?: SelectedFood | null;
-  onFoodSelect: (food: SelectedFood) => void;
+  selectedFood?: Food | null;
+  onFoodSelect: (food: Food) => void;
   onNext: () => void;
   onBack: () => void;
   disabled?: boolean;
@@ -27,7 +27,7 @@ export interface FoodSelectorProps {
 /**
  * 음식 선택 컴포넌트
  * @param {City} selectedCity - 선택된 도시
- * @param {SelectedFood} selectedFood - 선택된 음식
+ * @param {Food} selectedFood - 선택된 음식
  * @param {Function} onFoodSelect - 음식 선택 시 호출되는 콜백
  * @param {Function} onNext - 다음 단계로 이동 시 호출되는 콜백
  * @param {Function} onBack - 뒤로가기 시 호출되는 콜백
@@ -50,29 +50,6 @@ export function FoodSelector({
       scrollContainerRef.current.scrollTop = 0;
     }
   }, [activeTab]);
-  const handleCommonFoodSelect = (food: (typeof COMMON_FOODS)[0]) => {
-    const selectedFood: SelectedFood = {
-      type: 'common',
-      id: food.id,
-      name: food.name,
-      emoji: food.emoji,
-      description: food.description,
-    };
-    onFoodSelect(selectedFood);
-  };
-
-  const handleLocalFoodSelect = (food: (typeof LOCAL_FOODS)[0]) => {
-    const selectedFood: SelectedFood = {
-      type: 'local',
-      id: food.id,
-      name: food.name,
-      emoji: food.emoji,
-      description: food.description,
-      city: food.city,
-      country: food.country,
-    };
-    onFoodSelect(selectedFood);
-  };
 
   return (
     <Card className="restaurant-card w-full max-w-4xl mx-auto">
@@ -122,13 +99,10 @@ export function FoodSelector({
                 <FoodCard
                   key={food.id}
                   food={food}
-                  onSelect={() => handleCommonFoodSelect(food)}
+                  onSelect={() => onFoodSelect(food)}
                   isLocal={false}
                   disabled={disabled}
-                  isSelected={
-                    selectedFood?.type === 'common' &&
-                    selectedFood?.id === food.id
-                  }
+                  isSelected={selectedFood?.id === food.id}
                 />
               ))}
             {activeTab === 'local' &&
@@ -136,13 +110,10 @@ export function FoodSelector({
                 <FoodCard
                   key={food.id}
                   food={food}
-                  onSelect={() => handleLocalFoodSelect(food)}
+                  onSelect={() => onFoodSelect(food)}
                   isLocal={true}
                   disabled={disabled}
-                  isSelected={
-                    selectedFood?.type === 'local' &&
-                    selectedFood?.id === food.id
-                  }
+                  isSelected={selectedFood?.id === food.id}
                 />
               ))}
           </div>
@@ -160,13 +131,10 @@ export function FoodSelector({
                 <FoodCard
                   key={food.id}
                   food={food}
-                  onSelect={() => handleCommonFoodSelect(food)}
+                  onSelect={() => onFoodSelect(food)}
                   isLocal={false}
                   disabled={disabled}
-                  isSelected={
-                    selectedFood?.type === 'common' &&
-                    selectedFood?.id === food.id
-                  }
+                  isSelected={selectedFood?.id === food.id}
                 />
               ))}
             </div>
@@ -182,13 +150,10 @@ export function FoodSelector({
                 <FoodCard
                   key={food.id}
                   food={food}
-                  onSelect={() => handleLocalFoodSelect(food)}
+                  onSelect={() => onFoodSelect(food)}
                   isLocal={true}
                   disabled={disabled}
-                  isSelected={
-                    selectedFood?.type === 'local' &&
-                    selectedFood?.id === food.id
-                  }
+                  isSelected={selectedFood?.id === food.id}
                 />
               ))}
             </div>

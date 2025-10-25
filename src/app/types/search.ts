@@ -1,8 +1,9 @@
 import type { City } from '@/app/types/city';
+import type { Food } from '@/app/types/food';
 
 export interface SearchState {
   selectedCity: City | null;
-  selectedFood: string | null;
+  selectedFood: Food | null;
   priorities: PrioritySettings | null;
 }
 
@@ -34,30 +35,4 @@ export interface SelectedPriority {
 export interface PrioritySelectionState {
   available: PriorityItem[];
   selected: SelectedPriority[];
-}
-
-export interface CommonFood {
-  id: string;
-  name: string;
-  emoji: string;
-  description: string;
-}
-
-export interface LocalFood {
-  id: string;
-  name: string;
-  emoji: string;
-  description: string;
-  city: string;
-  country: string;
-}
-
-export interface SelectedFood {
-  type: 'common' | 'local';
-  id: string;
-  name: string;
-  emoji: string;
-  description: string;
-  city?: string;
-  country?: string;
 }

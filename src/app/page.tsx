@@ -4,7 +4,7 @@ import { CitySelector } from '@/app/components/search/CitySelector';
 import { FoodSelector } from '@/app/components/search/FoodSelector';
 import { PrioritySelector } from '@/app/components/search/PrioritySelector';
 import type { City, CreateCityRequest } from '@/app/types/city';
-import type { SelectedFood } from '@/app/types/search';
+import type { Food } from '@/app/types/food';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useCity } from './hooks/useCity';
@@ -15,7 +15,7 @@ import { useCity } from './hooks/useCity';
  */
 export default function Home() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [selectedFood, setSelectedFood] = useState<SelectedFood | null>(null);
+  const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [selectedPriorities, setSelectedPriorities] = useState<Record<
     string,
     number
@@ -30,7 +30,7 @@ export default function Home() {
     setSelectedCity(city);
   };
 
-  const handleFoodSelect = (food: SelectedFood) => {
+  const handleFoodSelect = (food: Food) => {
     setSelectedFood(food);
   };
 
