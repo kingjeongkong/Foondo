@@ -1,7 +1,7 @@
-import z from 'zod';
+import { z } from 'zod';
 
 export const foodSchema = z.object({
-  id: z.number(),
+  id: z.string().uuid(),
   cityId: z.string(),
   name: z.string(),
   description: z.string().nullable(),
