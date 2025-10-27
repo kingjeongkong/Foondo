@@ -40,10 +40,15 @@ export function FoodCard({
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm text-gray-900 truncate">
-              {food.name}
-            </h3>
-            <p className="text-xs text-gray-500 truncate">{food.description}</p>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-sm text-gray-900 truncate">
+                {food.name}
+              </h3>
+              <p className="text-xs text-gray-500 truncate">
+                {isLocal ? `[${food.category}]` : food.category}
+              </p>
+            </div>
+            <p className="text-xs text-gray-500">{food.description}</p>
           </div>
           {isSelected && (
             <span className="text-xs font-medium text-warm-taste px-2 py-1 rounded-full bg-warm-taste/10">
