@@ -4,14 +4,16 @@ export const foodSchema = z.object({
   id: z.string().uuid(),
   cityId: z.string(),
   name: z.string(),
-  description: z.string().nullable(),
+  description: z.string(),
+  category: z.string(),
   createdAt: z.date(),
 });
 
 export const createFoodSchema = z.object({
   cityId: z.string(),
   name: z.string(),
-  description: z.string().nullable(),
+  description: z.string(),
+  category: z.string(),
 });
 
 export type Food = z.infer<typeof foodSchema>;
