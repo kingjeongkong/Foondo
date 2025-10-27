@@ -5,11 +5,8 @@ import { CreateCityRequest } from '../types/city';
 
 export function useCity() {
   const { mutateAsync: createCity, isPending: isCreatingCity } = useMutation({
-    mutationFn: async (data: CreateCityRequest) => {
-      const result = await cityService().createCity(data);
-      if (result.success && result.data) {
-        return result.data;
-      }
+    mutationFn: (data: CreateCityRequest) => {
+      return cityService().createCity(data);
     },
     onError: () => {
       toast.error('Failed to select city');
