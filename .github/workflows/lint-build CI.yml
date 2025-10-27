@@ -44,3 +44,5 @@ jobs:
       # 7. 타입스크립트 타입 체크 및 빌드 테스트 실행
       - name: Run Build
         run: pnpm run build
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
