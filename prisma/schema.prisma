@@ -32,7 +32,8 @@ model Food {
   createdAt   DateTime @default(now()) @map("created_at")
   cityId      String   @map("city_id")
   name        String
-  description String?
+  description String
+  category    String
 
   city City           @relation(fields: [cityId], references: [id], onDelete: Cascade)
 

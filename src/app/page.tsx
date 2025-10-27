@@ -26,7 +26,10 @@ export default function Home() {
   >('city');
 
   const { createCity, isCreatingCity } = useCity();
-  const { localFoods, isLoadingFoods } = useFood(selectedCity?.id ?? '');
+  const { localFoods, isLoadingFoods } = useFood(
+    selectedCity,
+    currentStep === 'food'
+  );
 
   const handleCitySelect = (city: City) => {
     setSelectedCity(city);
@@ -48,7 +51,7 @@ export default function Home() {
         name: selectedCity?.name ?? '',
         country: selectedCity?.country ?? '',
       };
-      await createCity(requestData).then(() => {
+      createCity(requestData).then(() => {
         setCurrentStep('food');
       });
     } else if (currentStep === 'food') {

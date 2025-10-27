@@ -29,6 +29,7 @@ export type FoodMinAggregateOutputType = {
   cityId: string | null
   name: string | null
   description: string | null
+  category: string | null
 }
 
 export type FoodMaxAggregateOutputType = {
@@ -37,6 +38,7 @@ export type FoodMaxAggregateOutputType = {
   cityId: string | null
   name: string | null
   description: string | null
+  category: string | null
 }
 
 export type FoodCountAggregateOutputType = {
@@ -45,6 +47,7 @@ export type FoodCountAggregateOutputType = {
   cityId: number
   name: number
   description: number
+  category: number
   _all: number
 }
 
@@ -55,6 +58,7 @@ export type FoodMinAggregateInputType = {
   cityId?: true
   name?: true
   description?: true
+  category?: true
 }
 
 export type FoodMaxAggregateInputType = {
@@ -63,6 +67,7 @@ export type FoodMaxAggregateInputType = {
   cityId?: true
   name?: true
   description?: true
+  category?: true
 }
 
 export type FoodCountAggregateInputType = {
@@ -71,6 +76,7 @@ export type FoodCountAggregateInputType = {
   cityId?: true
   name?: true
   description?: true
+  category?: true
   _all?: true
 }
 
@@ -151,7 +157,8 @@ export type FoodGroupByOutputType = {
   createdAt: Date
   cityId: string
   name: string
-  description: string | null
+  description: string
+  category: string
   _count: FoodCountAggregateOutputType | null
   _min: FoodMinAggregateOutputType | null
   _max: FoodMaxAggregateOutputType | null
@@ -180,7 +187,8 @@ export type FoodWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Food"> | Date | string
   cityId?: Prisma.StringFilter<"Food"> | string
   name?: Prisma.StringFilter<"Food"> | string
-  description?: Prisma.StringNullableFilter<"Food"> | string | null
+  description?: Prisma.StringFilter<"Food"> | string
+  category?: Prisma.StringFilter<"Food"> | string
   city?: Prisma.XOR<Prisma.CityScalarRelationFilter, Prisma.CityWhereInput>
 }
 
@@ -189,7 +197,8 @@ export type FoodOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   cityId?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  description?: Prisma.SortOrderInput | Prisma.SortOrder
+  description?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   city?: Prisma.CityOrderByWithRelationInput
 }
 
@@ -201,7 +210,8 @@ export type FoodWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Food"> | Date | string
   cityId?: Prisma.StringFilter<"Food"> | string
   name?: Prisma.StringFilter<"Food"> | string
-  description?: Prisma.StringNullableFilter<"Food"> | string | null
+  description?: Prisma.StringFilter<"Food"> | string
+  category?: Prisma.StringFilter<"Food"> | string
   city?: Prisma.XOR<Prisma.CityScalarRelationFilter, Prisma.CityWhereInput>
 }, "id">
 
@@ -210,7 +220,8 @@ export type FoodOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder
   cityId?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  description?: Prisma.SortOrderInput | Prisma.SortOrder
+  description?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   _count?: Prisma.FoodCountOrderByAggregateInput
   _max?: Prisma.FoodMaxOrderByAggregateInput
   _min?: Prisma.FoodMinOrderByAggregateInput
@@ -224,14 +235,16 @@ export type FoodScalarWhereWithAggregatesInput = {
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Food"> | Date | string
   cityId?: Prisma.StringWithAggregatesFilter<"Food"> | string
   name?: Prisma.StringWithAggregatesFilter<"Food"> | string
-  description?: Prisma.StringNullableWithAggregatesFilter<"Food"> | string | null
+  description?: Prisma.StringWithAggregatesFilter<"Food"> | string
+  category?: Prisma.StringWithAggregatesFilter<"Food"> | string
 }
 
 export type FoodCreateInput = {
   id?: string
   createdAt?: Date | string
   name: string
-  description?: string | null
+  description: string
+  category: string
   city: Prisma.CityCreateNestedOneWithoutFoodsInput
 }
 
@@ -240,14 +253,16 @@ export type FoodUncheckedCreateInput = {
   createdAt?: Date | string
   cityId: string
   name: string
-  description?: string | null
+  description: string
+  category: string
 }
 
 export type FoodUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.CityUpdateOneRequiredWithoutFoodsNestedInput
 }
 
@@ -256,7 +271,8 @@ export type FoodUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   cityId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type FoodCreateManyInput = {
@@ -264,14 +280,16 @@ export type FoodCreateManyInput = {
   createdAt?: Date | string
   cityId: string
   name: string
-  description?: string | null
+  description: string
+  category: string
 }
 
 export type FoodUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type FoodUncheckedUpdateManyInput = {
@@ -279,7 +297,8 @@ export type FoodUncheckedUpdateManyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   cityId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type FoodListRelationFilter = {
@@ -298,6 +317,7 @@ export type FoodCountOrderByAggregateInput = {
   cityId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  category?: Prisma.SortOrder
 }
 
 export type FoodMaxOrderByAggregateInput = {
@@ -306,6 +326,7 @@ export type FoodMaxOrderByAggregateInput = {
   cityId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  category?: Prisma.SortOrder
 }
 
 export type FoodMinOrderByAggregateInput = {
@@ -314,6 +335,7 @@ export type FoodMinOrderByAggregateInput = {
   cityId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  category?: Prisma.SortOrder
 }
 
 export type FoodCreateNestedManyWithoutCityInput = {
@@ -362,14 +384,16 @@ export type FoodCreateWithoutCityInput = {
   id?: string
   createdAt?: Date | string
   name: string
-  description?: string | null
+  description: string
+  category: string
 }
 
 export type FoodUncheckedCreateWithoutCityInput = {
   id?: string
   createdAt?: Date | string
   name: string
-  description?: string | null
+  description: string
+  category: string
 }
 
 export type FoodCreateOrConnectWithoutCityInput = {
@@ -406,35 +430,40 @@ export type FoodScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Food"> | Date | string
   cityId?: Prisma.StringFilter<"Food"> | string
   name?: Prisma.StringFilter<"Food"> | string
-  description?: Prisma.StringNullableFilter<"Food"> | string | null
+  description?: Prisma.StringFilter<"Food"> | string
+  category?: Prisma.StringFilter<"Food"> | string
 }
 
 export type FoodCreateManyCityInput = {
   id?: string
   createdAt?: Date | string
   name: string
-  description?: string | null
+  description: string
+  category: string
 }
 
 export type FoodUpdateWithoutCityInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type FoodUncheckedUpdateWithoutCityInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type FoodUncheckedUpdateManyWithoutCityInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
@@ -445,6 +474,7 @@ export type FoodSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   cityId?: boolean
   name?: boolean
   description?: boolean
+  category?: boolean
   city?: boolean | Prisma.CityDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["food"]>
 
@@ -454,6 +484,7 @@ export type FoodSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   cityId?: boolean
   name?: boolean
   description?: boolean
+  category?: boolean
   city?: boolean | Prisma.CityDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["food"]>
 
@@ -463,6 +494,7 @@ export type FoodSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   cityId?: boolean
   name?: boolean
   description?: boolean
+  category?: boolean
   city?: boolean | Prisma.CityDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["food"]>
 
@@ -472,9 +504,10 @@ export type FoodSelectScalar = {
   cityId?: boolean
   name?: boolean
   description?: boolean
+  category?: boolean
 }
 
-export type FoodOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "createdAt" | "cityId" | "name" | "description", ExtArgs["result"]["food"]>
+export type FoodOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "createdAt" | "cityId" | "name" | "description" | "category", ExtArgs["result"]["food"]>
 export type FoodInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   city?: boolean | Prisma.CityDefaultArgs<ExtArgs>
 }
@@ -495,7 +528,8 @@ export type $FoodPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     createdAt: Date
     cityId: string
     name: string
-    description: string | null
+    description: string
+    category: string
   }, ExtArgs["result"]["food"]>
   composites: {}
 }
@@ -925,6 +959,7 @@ export interface FoodFieldRefs {
   readonly cityId: Prisma.FieldRef<"Food", 'String'>
   readonly name: Prisma.FieldRef<"Food", 'String'>
   readonly description: Prisma.FieldRef<"Food", 'String'>
+  readonly category: Prisma.FieldRef<"Food", 'String'>
 }
     
 
