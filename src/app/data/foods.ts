@@ -10,6 +10,7 @@ export const COMMON_FOODS: Food[] = [
     cityId: '1',
     name: 'Hamburger',
     description: 'Classic American burger with beef patty',
+    category: 'Fast Food',
     createdAt: new Date(),
   },
   {
@@ -17,6 +18,7 @@ export const COMMON_FOODS: Food[] = [
     cityId: '1',
     name: 'Pizza',
     description: 'Italian flatbread with various toppings',
+    category: 'Italian',
     createdAt: new Date(),
   },
   {
@@ -24,6 +26,7 @@ export const COMMON_FOODS: Food[] = [
     cityId: '1',
     name: 'Coffee',
     description: 'Brewed coffee and espresso drinks',
+    category: 'Beverage',
     createdAt: new Date(),
   },
   {
@@ -31,6 +34,7 @@ export const COMMON_FOODS: Food[] = [
     cityId: '1',
     name: 'Bar & Drinks',
     description: 'Alcoholic beverages and cocktails',
+    category: 'Bar',
     createdAt: new Date(),
   },
   {
@@ -38,6 +42,7 @@ export const COMMON_FOODS: Food[] = [
     cityId: '1',
     name: 'Dessert',
     description: 'Sweet treats and pastries',
+    category: 'Dessert',
     createdAt: new Date(),
   },
   {
@@ -45,6 +50,7 @@ export const COMMON_FOODS: Food[] = [
     cityId: '1',
     name: 'Healthying',
     description: 'Fresh salads and healthy options',
+    category: 'Healthy',
     createdAt: new Date(),
   },
 ];
