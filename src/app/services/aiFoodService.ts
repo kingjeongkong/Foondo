@@ -25,42 +25,16 @@ const FOOD_COUNT = 10;
 export async function generateAndFormatLocalFoods(
   city: City
 ): Promise<CreateFoodRequest[]> {
-  // 더 구체화된 프롬프트 생성
-  const prompt = `
-    You are a travel food curator recommending authentic and diverse local dishes from specific cities.
-    
-    Recommend exactly ${FOOD_COUNT} must-try foods for a traveler visiting "${city.name}, ${city.country}".
-    Include both iconic classics and hidden local favorites that truly represent this city’s food culture.
-    
-    For each food, provide:
-    - name: The food name
-    - description: 1–2 sentences explaining what it is and why it’s special
-    - category: A short, simple label describing what type of food it is (e.g., street food, main dish, dessert, snack, beverage, traditional, etc.)
-      • The category should be concise (1–3 words max).
-      • Avoid long phrases or sentences.
-    
-    Return your answer strictly in this JSON format:
-    {
-      "foods": [
-        { "name": "food name", "description": "brief explanation", "category": "category name" },
-        ...
-      ]
-    }
-    
-    Rules:
-    - All content must be in English.
-    - Do not include any text outside the JSON.
-    - Each field (name, description, category) must be non-empty and specific to ${city.name}.
-    `;
+  const userPrompt = `Find local foods of ${city.name}, ${city.country}`;
 
   try {
-    const response = await foodAIService.generateJSONWithRetry<{
+    const response = await foodAIService.generateJSON<{
       foods: {
         name: string;
         description: string;
         category: string;
       }[];
-    }>(prompt);
+    }>(createSystemPrompt(city), userPrompt);
 
     // AI 응답을 Zod로 안전하게 검증
     const validatedResponse = AIGeneratedFoodSchema.parse(response.data);
@@ -81,4 +55,33 @@ export async function generateAndFormatLocalFoods(
     // 에러를 다시 던져서 API 라우트에서 최종 처리하도록 함
     throw new Error('AI로부터 유효한 음식 데이터를 생성하는 데 실패했습니다.');
   }
+}
+
+function createSystemPrompt(city: City): string {
+  return `
+  You are a travel food curator recommending authentic and diverse local dishes from specific cities.
+  
+  Recommend exactly ${FOOD_COUNT} must-try foods for a traveler visiting "${city.name}, ${city.country}".
+  Include both iconic classics and hidden local favorites that truly represent this city’s food culture.
+  
+  For each food, provide:
+  - name: The food name
+  - description: 1–2 sentences explaining what it is and why it’s special
+  - category: A short, simple label describing what type of food it is (e.g., street food, main dish, dessert, snack, beverage, traditional, etc.)
+    • The category should be concise (1–3 words max).
+    • Avoid long phrases or sentences.
+  
+  Return your answer strictly in this JSON format:
+  {
+    "foods": [
+      { "name": "food name", "description": "brief explanation", "category": "category name" },
+      ...
+    ]
+  }
+  
+  Rules:
+  - All content must be in English.
+  - Do not include any text outside the JSON.
+  - Each field (name, description, category) must be non-empty and specific to ${city.name}.
+  `;
 }

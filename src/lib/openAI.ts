@@ -38,37 +38,30 @@ export class OpenAIService {
    * @param prompt 프롬프트
    * @returns 파싱된 JSON 데이터
    */
-  async generateJSON<T>(prompt: string): Promise<OpenAIResponse<T>> {
+  async generateJSON<T>(
+    systemPrompt: string,
+    userPrompt: string
+  ): Promise<OpenAIResponse<T>> {
     try {
-      const response = await this.client.chat.completions.create({
+      const response = await this.client.responses.create({
         model: this.config.model!,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a highly intelligent API that strictly returns data in valid JSON format. Do not include any explanatory text, markdown formatting like ```json, or anything outside of the requested JSON structure.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
+        instructions: systemPrompt,
+        input: userPrompt,
         temperature: this.config.temperature,
-        max_tokens: this.config.maxTokens,
       });
 
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
+      const output = response.output_text as string | undefined;
+      if (!output) {
         throw new Error('No content generated');
       }
 
-      const jsonData = JSON.parse(content);
+      const jsonData = JSON.parse(output);
 
       return {
         data: jsonData,
         usage: {
-          promptTokens: response.usage?.prompt_tokens || 0,
-          completionTokens: response.usage?.completion_tokens || 0,
+          promptTokens: response.usage?.input_tokens || 0,
+          completionTokens: response.usage?.output_tokens || 0,
           totalTokens: response.usage?.total_tokens || 0,
         },
       };
@@ -76,36 +69,6 @@ export class OpenAIService {
       console.error('AI JSON 생성 실패:', error);
       throw new Error('Failed to generate JSON response');
     }
-  }
-
-  /**
-   * 재시도 로직이 포함된 JSON 생성
-   * @param prompt 프롬프트
-   * @param maxRetries 최대 재시도 횟수
-   * @returns 파싱된 JSON 데이터
-   */
-  async generateJSONWithRetry<T>(
-    prompt: string,
-    maxRetries: number = 3
-  ): Promise<OpenAIResponse<T>> {
-    let lastError: Error;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        return await this.generateJSON<T>(prompt);
-      } catch (error) {
-        lastError = error as Error;
-
-        if (attempt === maxRetries) {
-          throw lastError;
-        }
-
-        // 1초 대기 후 재시도
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    }
-
-    throw lastError!;
   }
 }
 
@@ -122,7 +85,7 @@ if (!apiKey) {
 export const foodAIService = new OpenAIService({
   apiKey,
   model: 'gpt-4o-mini',
-  temperature: 0.7,
+  temperature: 0.8,
   maxTokens: 1000,
 });
 

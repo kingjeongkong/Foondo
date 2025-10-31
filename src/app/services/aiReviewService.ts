@@ -29,10 +29,10 @@ const AIAnalysisSchema = z.object({
     quantity: z.number().min(0).max(100),
     accessibility: z.number().min(0).max(100),
   }),
-  summary: z.string().min(10).max(200),
+  summary: z.string(),
   keywords: z.object({
-    positive: z.array(z.string()).max(10),
-    negative: z.array(z.string()).max(10),
+    positive: z.array(z.string()),
+    negative: z.array(z.string()),
   }),
   confidence: z.number().min(0).max(100),
 });
@@ -44,42 +44,29 @@ const AIAnalysisSchema = z.object({
  * @returns AI 분석 결과
  */
 export async function analyzeReviewsWithAI(
-  reviews: string[],
-  options: {
-    maxTotalChars?: number; // 전체 텍스트 최대 길이 (기본값: 10000)
-  } = {}
+  reviews: string[]
 ): Promise<AIAnalysisResult> {
-  const { maxTotalChars = 10000 } = options;
-
   if (!reviews || reviews.length === 0) {
     throw new Error('리뷰 데이터가 없습니다');
   }
 
-  // 리뷰 텍스트 전처리 및 길이 제한
-  const processedReviews = preprocessReviews(reviews, maxTotalChars);
-
-  if (processedReviews.length === 0) {
-    throw new Error('유효한 리뷰 데이터가 없습니다');
-  }
-
   console.log(
-    `🤖 AI 리뷰 분석 시작: ${processedReviews.length}개 리뷰, 총 ${processedReviews.join(' ').length}자`
+    `🤖 AI 리뷰 분석 시작: ${reviews.length}개 리뷰, 총 ${reviews.join(' ').length}자`
   );
-
-  // AI 프롬프트 생성
-  const prompt = createAnalysisPrompt(processedReviews);
 
   try {
     // AI 분석 실행
-    const response =
-      await reviewAIService.generateJSONWithRetry<AIAnalysisResult>(prompt);
+    const response = await reviewAIService.generateJSON<AIAnalysisResult>(
+      createSystemPrompt(),
+      reviews.join('\n\n')
+    );
 
     // 응답 검증 및 후처리
     const validatedResult = validateAndProcessResult(response.data);
 
     console.log(`✅ AI 리뷰 분석 완료: 신뢰도 ${validatedResult.confidence}%`);
 
-    return validatedResult;
+    return response.data as AIAnalysisResult;
   } catch (error) {
     console.error('AI 리뷰 분석 실패:', error);
     throw new Error('리뷰 분석에 실패했습니다');
@@ -87,50 +74,11 @@ export async function analyzeReviewsWithAI(
 }
 
 /**
- * 리뷰 텍스트를 전처리하고 길이를 제한합니다.
- */
-function preprocessReviews(reviews: string[], maxTotalChars: number): string[] {
-  let totalChars = 0;
-  const processedReviews: string[] = [];
-
-  for (const review of reviews) {
-    if (!review || typeof review !== 'string') continue;
-
-    const trimmedReview = review.trim();
-    if (trimmedReview.length === 0) continue;
-
-    // 현재까지의 총 길이 + 이 리뷰 길이가 제한을 초과하면 중단
-    if (totalChars + trimmedReview.length > maxTotalChars) {
-      const remainingChars = maxTotalChars - totalChars;
-      if (remainingChars > 50) {
-        // 최소 50자 이상은 남겨야 의미있음
-        processedReviews.push(
-          trimmedReview.substring(0, remainingChars) + '...(truncated)'
-        );
-      }
-      break;
-    }
-
-    processedReviews.push(trimmedReview);
-    totalChars += trimmedReview.length;
-  }
-
-  return processedReviews;
-}
-
-/**
  * AI 분석을 위한 프롬프트를 생성합니다.
  */
-function createAnalysisPrompt(reviews: string[]): string {
-  const reviewsText = reviews
-    .map((review, index) => `${index + 1}. ${review}`)
-    .join('\n\n');
-
+function createSystemPrompt(): string {
   return `
 You are an expert restaurant analyst. Analyze the following customer reviews and provide objective, unbiased scores for 6 key restaurant attributes.
-
-REVIEWS:
-${reviewsText}
 
 TASK:
 Rate each attribute on a scale of 0-100 based on the review content. Be objective, analytical, and unbiased. Do not overreact to single extreme reviews - consider the overall sentiment and patterns across all reviews.
@@ -154,19 +102,19 @@ INSTRUCTIONS:
 OUTPUT FORMAT (JSON only, no other text):
 {
   "scores": {
-    "taste": 85,
-    "price": 72,
-    "atmosphere": 90,
-    "service": 78,
-    "quantity": 80,
-    "accessibility": 65
+    "taste": number,
+    "price": number,
+    "atmosphere": number,
+    "service": number,
+    "quantity": number,
+    "accessibility": number
   },
-  "summary": "Brief objective summary of key findings",
+  "summary": string,
   "keywords": {
-    "positive": ["keyword1", "keyword2"],
-    "negative": ["keyword1", "keyword2"]
+    "positive": string[],
+    "negative": string[]
   },
-  "confidence": 85
+  "confidence": number
 }
 
 All outputs must be in English.
@@ -176,7 +124,7 @@ All outputs must be in English.
 /**
  * AI 응답을 검증하고 후처리합니다.
  */
-function validateAndProcessResult(data: unknown): AIAnalysisResult {
+function validateAndProcessResult(data: AIAnalysisResult): AIAnalysisResult {
   try {
     // Zod 스키마로 검증
     const validated = AIAnalysisSchema.parse(data);
