@@ -1,3 +1,4 @@
+import type { PrioritySettings } from '@/app/types/search';
 import {
   getMultipleRestaurantReviews,
   searchRestaurantsByFood,
@@ -222,4 +223,144 @@ export async function analyzeAndSaveRestaurantReport(reviewData: {
       throw fallbackError;
     }
   }
+}
+
+/**
+ * 음식점들의 리포트를 기반으로 가중치를 적용하여 최종 점수를 계산하고 랭킹을 생성합니다.
+ * @param restaurants 음식점 배열
+ * @param reports 리포트 배열
+ * @param priorities 사용자 우선순위 설정 (distance 제외)
+ * @returns 랭킹 정렬된 음식점 결과 배열
+ */
+export function calculateRestaurantScores(
+  restaurants: Array<{
+    id: string;
+    placeId: string;
+    name: string | null;
+    address: string | null;
+    photoUrl: string | null;
+  }>,
+  reports: Array<{
+    restaurantId: string;
+    tasteScore: number | null;
+    priceScore: number | null;
+    atmosphereScore: number | null;
+    serviceScore: number | null;
+    quantityScore: number | null;
+    aiSummary: string | null;
+  }>,
+  priorities: PrioritySettings
+): Array<{
+  restaurant: {
+    id: string;
+    placeId: string;
+    name: string | null;
+    address: string | null;
+    photoUrl: string | null;
+  };
+  report: {
+    tasteScore: number | null;
+    priceScore: number | null;
+    atmosphereScore: number | null;
+    serviceScore: number | null;
+    quantityScore: number | null;
+    aiSummary: string | null;
+  };
+  finalScore: number;
+  rank: number;
+}> {
+  // 1. 우선순위를 가중치로 변환 (distance 제외)
+  const weightMap: Record<number, number> = {
+    3: 3.0, // 1순위
+    2: 2.0, // 2순위
+    1: 1.0, // 3순위
+    0: 0.0, // 미선택
+  };
+
+  const weights = {
+    taste: weightMap[priorities.taste],
+    price: weightMap[priorities.price],
+    atmosphere: weightMap[priorities.atmosphere],
+    service: weightMap[priorities.service],
+    quantity: weightMap[priorities.quantity],
+  };
+
+  const totalWeight =
+    weights.taste +
+    weights.price +
+    weights.atmosphere +
+    weights.service +
+    weights.quantity;
+
+  // 2. 음식점과 리포트를 매핑하고 최종 점수 계산
+  const restaurantScores = restaurants
+    .map((restaurant) => {
+      const report = reports.find((r) => r.restaurantId === restaurant.id);
+
+      // 리포트가 없으면 제외
+      if (!report) {
+        return null;
+      }
+
+      // 점수가 모두 null이면 제외
+      if (
+        report.tasteScore === null &&
+        report.priceScore === null &&
+        report.atmosphereScore === null &&
+        report.serviceScore === null &&
+        report.quantityScore === null
+      ) {
+        return null;
+      }
+
+      // 최종 점수 계산
+      let finalScore: number;
+
+      if (totalWeight === 0) {
+        // 가중치가 없으면 모든 점수의 평균 사용
+        const scores = [
+          report.tasteScore,
+          report.priceScore,
+          report.atmosphereScore,
+          report.serviceScore,
+          report.quantityScore,
+        ].filter((score): score is number => score !== null);
+
+        finalScore =
+          scores.length > 0
+            ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+            : 0;
+      } else {
+        // 정규화된 가중 평균
+        const weightedSum =
+          (report.tasteScore || 0) * weights.taste +
+          (report.priceScore || 0) * weights.price +
+          (report.atmosphereScore || 0) * weights.atmosphere +
+          (report.serviceScore || 0) * weights.service +
+          (report.quantityScore || 0) * weights.quantity;
+
+        finalScore = weightedSum / totalWeight;
+      }
+
+      return {
+        restaurant,
+        report: {
+          tasteScore: report.tasteScore,
+          priceScore: report.priceScore,
+          atmosphereScore: report.atmosphereScore,
+          serviceScore: report.serviceScore,
+          quantityScore: report.quantityScore,
+          aiSummary: report.aiSummary,
+        },
+        finalScore,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+    .sort((a, b) => b.finalScore - a.finalScore) // 내림차순 정렬
+    .map((item, index) => ({
+      ...item,
+      rank: index + 1, // 랭킹 추가
+    }));
+
+  return restaurantScores;
 }
