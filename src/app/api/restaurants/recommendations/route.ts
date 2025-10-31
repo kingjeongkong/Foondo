@@ -1,6 +1,9 @@
 import { citySchema } from '@/app/types/city';
 import { foodSchema } from '@/app/types/food';
-import { searchAndSaveRestaurants } from '@/lib/services/restaurantService';
+import {
+  collectRestaurantReviews,
+  searchAndSaveRestaurants,
+} from '@/lib/services/restaurantService';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -53,7 +56,15 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ 단계 1 완료: ${restaurants.length}개 음식점 저장됨`);
 
-    // 현재는 단계 1만 구현되었으므로 기본 응답 반환
+    // 단계 2: 리뷰 수집
+    console.log(`📝 단계 2 실행: 리뷰 수집`);
+    const reviewsData = await collectRestaurantReviews(restaurants);
+
+    console.log(
+      `✅ 단계 2 완료: ${reviewsData.length}개 음식점 리뷰 수집 완료`
+    );
+
+    // 현재는 단계 2까지 구현되었으므로 기본 응답 반환
     return NextResponse.json({
       success: true,
       data: {
@@ -66,14 +77,21 @@ export async function POST(request: NextRequest) {
           photoUrl: r.photoUrl,
           cityId: r.cityId,
         })),
+        // 단계 2 결과
+        reviews: reviewsData.map((r) => ({
+          restaurantId: r.restaurantId,
+          placeId: r.placeId,
+          reviewCount: r.reviews.length,
+        })),
         // 향후 단계 결과는 여기에 추가됨
-        // recommendations: [], // 단계 4 완료 후
         // analysisResults: [], // 단계 3 완료 후
+        // recommendations: [], // 단계 4 완료 후
       },
-      message: 'Step 1 completed: Restaurants searched and saved',
+      message: 'Step 1-2 completed: Restaurants searched and reviews collected',
       metadata: {
-        completedSteps: [1],
+        completedSteps: [1, 2],
         totalRestaurants: restaurants.length,
+        restaurantsWithReviews: reviewsData.length,
       },
     });
   } catch (error) {

@@ -230,28 +230,38 @@ export function combineRestaurantData(
 
 /**
  * 여러 레스토랑의 리뷰를 병렬로 가져옵니다.
- * @param restaurants 기본 레스토랑 정보 배열 (searchRestaurantsByFood에서 받은 데이터)
- * @returns 레스토랑과 리뷰가 결합된 데이터 배열
+ * @param placeIds 레스토랑 place_id 배열
+ * @returns 각 placeId에 해당하는 리뷰 배열 (일부 실패 허용)
  */
-export async function getMultipleRestaurantReviews(
-  restaurants: RestaurantData[]
-): Promise<
+export async function getMultipleRestaurantReviews(placeIds: string[]): Promise<
   Array<{
-    restaurant: RestaurantData;
+    placeId: string;
     reviews: GooglePlaceReview[];
   }>
 > {
-  if (restaurants.length === 0) {
+  if (placeIds.length === 0) {
     return [];
   }
 
-  console.log(`🔍 ${restaurants.length}개 레스토랑 리뷰 병렬 조회 시작`);
+  console.log(`🔍 ${placeIds.length}개 레스토랑 리뷰 병렬 조회 시작`);
 
   try {
-    // 병렬로 모든 레스토랑의 리뷰를 가져옴
-    const promises = restaurants.map(async (restaurant) => {
-      const reviews = await getRestaurantReviews(restaurant.placeId);
-      return combineRestaurantData(restaurant, reviews);
+    // 병렬로 모든 레스토랑의 리뷰를 가져옴 (일부 실패 허용)
+    const promises = placeIds.map(async (placeId) => {
+      try {
+        const reviews = await getRestaurantReviews(placeId);
+        return {
+          placeId,
+          reviews: reviews || [],
+        };
+      } catch (error) {
+        // 일부 실패 허용: 에러 로그만 남기고 빈 배열 반환
+        console.error(`❌ 리뷰 조회 실패 (placeId: ${placeId}):`, error);
+        return {
+          placeId,
+          reviews: [],
+        };
+      }
     });
 
     const results = await Promise.all(promises);
