@@ -176,7 +176,7 @@ All outputs must be in English.
 /**
  * AI 응답을 검증하고 후처리합니다.
  */
-function validateAndProcessResult(data: any): AIAnalysisResult {
+function validateAndProcessResult(data: unknown): AIAnalysisResult {
   try {
     // Zod 스키마로 검증
     const validated = AIAnalysisSchema.parse(data);
