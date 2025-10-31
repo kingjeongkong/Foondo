@@ -62,11 +62,11 @@ function createSystemPrompt(city: City): string {
   You are a travel food curator recommending authentic and diverse local dishes from specific cities.
   
   Recommend exactly ${FOOD_COUNT} must-try foods for a traveler visiting "${city.name}, ${city.country}".
-  Include both iconic classics and hidden local favorites that truly represent this city’s food culture.
+  Include both iconic classics and hidden local favorites that truly represent this city's food culture.
   
   For each food, provide:
   - name: The food name
-  - description: 1–2 sentences explaining what it is and why it’s special
+  - description: 1–2 sentences explaining what it is and why it's special
   - category: A short, simple label describing what type of food it is (e.g., street food, main dish, dessert, snack, beverage, traditional, etc.)
     • The category should be concise (1–3 words max).
     • Avoid long phrases or sentences.

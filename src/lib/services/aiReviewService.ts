@@ -180,13 +180,13 @@ function validateAndProcessResult(data: AIAnalysisResult): AIAnalysisResult {
  */
 export function getSampleReviews(): string[] {
   return [
-    'My fiancée and I come to Bournemouth once a year and without fail visit this place. The food is delicious, great portion sizes and staff are always friendly. We’ve tried a few fish and chips shops during our time and this is by far the best in Bournemouth',
+    "My fiancée and I come to Bournemouth once a year and without fail visit this place. The food is delicious, great portion sizes and staff are always friendly. We've tried a few fish and chips shops during our time and this is by far the best in Bournemouth",
 
     "Simply outstanding.\n\nService was very friendly, sauces were complimentary, the servings were HUGE and the taste amazing!\n\nI'm a big fish and chips fan, and this is the best I've ever had, hands down, and the best value, too!\n\nThanks you guys!",
 
     "Overpriced below average fish and chip shop. Very small portion of chips classed as a 'regular' and the mayonnaise sachet's are 2 months out of date!!! (We went 13th August) We will never go there again.",
 
-    'We are a group of Volkswagen employees, and we stopped by Seastar Fish & Chips after a long workday. The food was absolutely fantastic — crispy fish, perfectly cooked chips, and everything fresh and flavorful. The staff were friendly, fast, and welcoming, making us feel right at home. One of the best traditional fish & chips experiences we’ve had in the UK. Highly recommended! 👏🇬🇧🐟🍟',
+    "We are a group of Volkswagen employees, and we stopped by Seastar Fish & Chips after a long workday. The food was absolutely fantastic — crispy fish, perfectly cooked chips, and everything fresh and flavorful. The staff were friendly, fast, and welcoming, making us feel right at home. One of the best traditional fish & chips experiences we've had in the UK. Highly recommended! 👏🇬🇧🐟🍟",
 
     'Nice traditional fish and chips and great service! Haddock was very good, despite the greasy look! Just chips that unfortunately were a bit soggy.',
   ];
