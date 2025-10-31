@@ -6,7 +6,7 @@ export const foodSchema = z.object({
   name: z.string(),
   description: z.string(),
   category: z.string(),
-  createdAt: z.date(),
+  createdAt: z.coerce.date().nullable().optional(),
 });
 
 export const createFoodSchema = z.object({
