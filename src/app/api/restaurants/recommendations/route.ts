@@ -1,6 +1,7 @@
 import { citySchema } from '@/app/types/city';
 import { foodSchema } from '@/app/types/food';
 import {
+  analyzeAndSaveRestaurantReport,
   collectRestaurantReviews,
   searchAndSaveRestaurants,
 } from '@/lib/services/restaurantService';
@@ -27,8 +28,8 @@ const recommendationRequestSchema = z.object({
  *
  * 단계별 구현:
  * ✅ 단계 1: 음식점 검색 + DB 저장
- * ⏳ 단계 2: 리뷰 수집
- * ⏳ 단계 3: AI 분석 + 리포트 저장
+ * ✅ 단계 2: 리뷰 수집
+ * ✅ 단계 3: AI 분석 + 리포트 저장
  * ⏳ 단계 4: 점수 계산 및 랭킹
  *
  * POST /api/restaurants/recommendations
@@ -64,34 +65,53 @@ export async function POST(request: NextRequest) {
       `✅ 단계 2 완료: ${reviewsData.length}개 음식점 리뷰 수집 완료`
     );
 
-    // 현재는 단계 2까지 구현되었으므로 기본 응답 반환
+    // 단계 3: AI 분석 + 리포트 저장
+    console.log(`📝 단계 3 실행: AI 분석 및 리포트 저장`);
+
+    // 병렬로 모든 음식점 처리 (일부 실패 허용)
+    // 에러 처리는 analyzeAndSaveRestaurantReport 내부에서 처리
+    const reportPromises = reviewsData.map((reviewData) =>
+      analyzeAndSaveRestaurantReport(reviewData)
+    );
+
+    // 모든 Promise 실행 (일부 실패 허용)
+    const reportResults = await Promise.allSettled(reportPromises);
+
+    const successfulReports = reportResults.filter(
+      (result) => result.status === 'fulfilled'
+    ).length;
+
+    console.log(
+      `✅ 단계 3 완료: ${successfulReports}/${reviewsData.length}개 리포트 저장 완료`
+    );
+
+    // 단계별 성공 여부 및 개수 계산
+    const step1Success = restaurants.length > 0;
+    const step2Success = reviewsData.length === restaurants.length;
+    const step3Success = successfulReports === reviewsData.length;
+
+    // 현재는 단계 3까지 구현되었으므로 성공 여부와 개수만 반환
     return NextResponse.json({
       success: true,
       data: {
-        // 단계 1 결과
-        restaurants: restaurants.map((r) => ({
-          id: r.id,
-          placeId: r.placeId,
-          name: r.name,
-          address: r.address,
-          photoUrl: r.photoUrl,
-          cityId: r.cityId,
-        })),
-        // 단계 2 결과
-        reviews: reviewsData.map((r) => ({
-          restaurantId: r.restaurantId,
-          placeId: r.placeId,
-          reviewCount: r.reviews.length,
-        })),
-        // 향후 단계 결과는 여기에 추가됨
-        // analysisResults: [], // 단계 3 완료 후
+        // 향후 단계 4에서 최종 추천 결과가 여기에 추가됨
         // recommendations: [], // 단계 4 완료 후
       },
-      message: 'Step 1-2 completed: Restaurants searched and reviews collected',
-      metadata: {
-        completedSteps: [1, 2],
-        totalRestaurants: restaurants.length,
-        restaurantsWithReviews: reviewsData.length,
+      message:
+        'Step 1-3 completed: Restaurants searched, reviews collected, and reports created',
+      steps: {
+        step1: {
+          success: step1Success,
+          count: step1Success ? restaurants.length : 0,
+        },
+        step2: {
+          success: step2Success,
+          count: step2Success ? reviewsData.length : 0,
+        },
+        step3: {
+          success: step3Success,
+          count: step3Success ? successfulReports : 0,
+        },
       },
     });
   } catch (error) {
