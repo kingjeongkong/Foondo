@@ -2,6 +2,7 @@ import { citySchema } from '@/app/types/city';
 import { foodSchema } from '@/app/types/food';
 import {
   analyzeAndSaveRestaurantReport,
+  calculateRestaurantScores,
   collectRestaurantReviews,
   searchAndSaveRestaurants,
 } from '@/lib/services/restaurantService';
@@ -30,7 +31,7 @@ const recommendationRequestSchema = z.object({
  * ✅ 단계 1: 음식점 검색 + DB 저장
  * ✅ 단계 2: 리뷰 수집
  * ✅ 단계 3: AI 분석 + 리포트 저장
- * ⏳ 단계 4: 점수 계산 및 랭킹
+ * ✅ 단계 4: 점수 계산 및 랭킹
  *
  * POST /api/restaurants/recommendations
  * Body: { city: City, food: Food, priorities: PrioritySettings }
@@ -85,20 +86,60 @@ export async function POST(request: NextRequest) {
       `✅ 단계 3 완료: ${successfulReports}/${reviewsData.length}개 리포트 저장 완료`
     );
 
+    // 단계 4: 점수 계산 및 랭킹
+    console.log(`📝 단계 4 실행: 점수 계산 및 랭킹`);
+
+    // 1. 성공한 리포트 추출
+    const reports = reportResults
+      .filter((result) => result.status === 'fulfilled')
+      .map(
+        (result) =>
+          (result as PromiseFulfilledResult<typeof result.value>).value
+      );
+
+    // 2. 점수 계산 및 랭킹
+    const restaurantScores = calculateRestaurantScores(
+      restaurants,
+      reports,
+      priorities
+    );
+
+    console.log(
+      `✅ 단계 4 완료: ${restaurantScores.length}개 음식점 랭킹 완료`
+    );
+
     // 단계별 성공 여부 및 개수 계산
     const step1Success = restaurants.length > 0;
     const step2Success = reviewsData.length === restaurants.length;
     const step3Success = successfulReports === reviewsData.length;
+    const step4Success = restaurantScores.length > 0;
 
-    // 현재는 단계 3까지 구현되었으므로 성공 여부와 개수만 반환
+    // 최종 추천 결과 반환
     return NextResponse.json({
       success: true,
       data: {
-        // 향후 단계 4에서 최종 추천 결과가 여기에 추가됨
-        // recommendations: [], // 단계 4 완료 후
+        recommendations: restaurantScores.map((item) => ({
+          rank: item.rank,
+          finalScore: Math.round(item.finalScore * 10) / 10, // 소수점 1자리
+          restaurant: {
+            id: item.restaurant.id,
+            placeId: item.restaurant.placeId,
+            name: item.restaurant.name,
+            address: item.restaurant.address,
+            photoUrl: item.restaurant.photoUrl,
+          },
+          report: {
+            tasteScore: item.report.tasteScore,
+            priceScore: item.report.priceScore,
+            atmosphereScore: item.report.atmosphereScore,
+            serviceScore: item.report.serviceScore,
+            quantityScore: item.report.quantityScore,
+            aiSummary: item.report.aiSummary,
+          },
+        })),
       },
       message:
-        'Step 1-3 completed: Restaurants searched, reviews collected, and reports created',
+        'Step 1-4 completed: Restaurants searched, reviews analyzed, and recommendations ranked',
       steps: {
         step1: {
           success: step1Success,
@@ -111,6 +152,10 @@ export async function POST(request: NextRequest) {
         step3: {
           success: step3Success,
           count: step3Success ? successfulReports : 0,
+        },
+        step4: {
+          success: step4Success,
+          count: step4Success ? restaurantScores.length : 0,
         },
       },
     });
