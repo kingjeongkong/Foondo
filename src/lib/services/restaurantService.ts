@@ -3,6 +3,7 @@ import {
   searchRestaurantsByFood,
 } from '@/lib/googlePlaces';
 import { prisma } from '@/lib/prisma';
+import { analyzeReviewsWithAI } from '@/lib/services/aiReviewService';
 
 /**
  * Google Places API로 음식점을 검색하고 DB에 저장합니다.
@@ -135,4 +136,90 @@ export async function collectRestaurantReviews(
   );
 
   return results; // 모든 음식점 포함
+}
+
+/**
+ * 음식점의 리뷰를 AI로 분석하고 리포트를 생성/업데이트합니다.
+ * - 리뷰가 없는 경우: 기본 리포트 생성 (모든 점수 null)
+ * - 리뷰가 있는 경우: 캐싱 확인 후 AI 분석 실행
+ * @param reviewData 리뷰 데이터
+ * @returns 생성/업데이트된 리포트
+ */
+export async function analyzeAndSaveRestaurantReport(reviewData: {
+  restaurantId: string;
+  placeId: string;
+  reviews: string[];
+}) {
+  try {
+    if (reviewData.reviews.length === 0) {
+      // 리뷰 없음 → 기본 리포트 생성 (모든 점수 null)
+      console.log(`📋 기본 리포트 생성: ${reviewData.restaurantId}`);
+      return await prisma.restaurantReport.create({
+        data: {
+          restaurantId: reviewData.restaurantId,
+        },
+      });
+    }
+
+    // 리뷰 있음 → 기존 리포트 확인 후 AI 분석
+
+    // 기존 리포트 확인 (캐싱)
+    const existingReport = await prisma.restaurantReport.findUnique({
+      where: { restaurantId: reviewData.restaurantId },
+    });
+
+    // 리포트가 있고 점수가 있으면 재분석 스킵 (캐싱)
+    if (existingReport && existingReport.tasteScore !== null) {
+      console.log(`⏭️ 리포트 존재 - 재분석 스킵: ${reviewData.restaurantId}`);
+      // 추후 lastUpdated를 기준으로 시간 기반 재분석 로직 추가 가능
+      return existingReport;
+    }
+
+    // 리포트가 없거나 점수가 null이면 AI 분석 실행
+    console.log(
+      `🤖 AI 분석 시작: ${reviewData.restaurantId} (${reviewData.reviews.length}개 리뷰)`
+    );
+
+    const analysis = await analyzeReviewsWithAI(reviewData.reviews);
+
+    console.log(
+      `💾 리포트 저장: ${reviewData.restaurantId} (신뢰도: ${analysis.confidence}%)`
+    );
+
+    return await prisma.restaurantReport.upsert({
+      where: { restaurantId: reviewData.restaurantId },
+      update: {}, // 추후 updated_at를 기준으로 업데이트 로직 추가
+      create: {
+        restaurantId: reviewData.restaurantId,
+        tasteScore: analysis.scores.taste,
+        priceScore: analysis.scores.price,
+        atmosphereScore: analysis.scores.atmosphere,
+        serviceScore: analysis.scores.service,
+        quantityScore: analysis.scores.quantity,
+        accessibilityScore: analysis.scores.accessibility,
+        aiSummary: analysis.summary,
+      },
+    });
+  } catch (error) {
+    // 일부 실패 허용: 에러 로그만 남기고 기본 리포트로 대체
+    console.error(
+      `❌ 리포트 생성 실패 (restaurantId: ${reviewData.restaurantId}):`,
+      error
+    );
+
+    // 실패한 경우 기본 리포트 생성
+    try {
+      return await prisma.restaurantReport.create({
+        data: {
+          restaurantId: reviewData.restaurantId,
+        },
+      });
+    } catch (fallbackError) {
+      console.error(
+        `❌ 기본 리포트 생성도 실패 (restaurantId: ${reviewData.restaurantId}):`,
+        fallbackError
+      );
+      throw fallbackError;
+    }
+  }
 }
