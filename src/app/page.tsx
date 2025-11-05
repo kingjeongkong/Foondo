@@ -1,11 +1,12 @@
 'use client';
 
+import { RecommendationsResult } from '@/app/components/results/RecommendationsResult';
 import { CitySelector } from '@/app/components/search/CitySelector';
 import { FoodSelector } from '@/app/components/search/FoodSelector';
 import { PrioritySelector } from '@/app/components/search/PrioritySelector';
 import type { City, CreateCityRequest } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
-import { Button } from '@/components/ui/button';
+import type { PrioritySettings } from '@/app/types/search';
 import { useState } from 'react';
 import { useCity } from './hooks/useCity';
 import { useFood } from './hooks/useFood';
@@ -17,10 +18,8 @@ import { useFood } from './hooks/useFood';
 export default function Home() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
-  const [selectedPriorities, setSelectedPriorities] = useState<Record<
-    string,
-    number
-  > | null>(null);
+  const [selectedPriorities, setSelectedPriorities] =
+    useState<PrioritySettings | null>(null);
   const [currentStep, setCurrentStep] = useState<
     'city' | 'food' | 'priority' | 'results'
   >('city');
@@ -39,7 +38,7 @@ export default function Home() {
     setSelectedFood(food);
   };
 
-  const handlePriorityComplete = (priorities: Record<string, number>) => {
+  const handlePriorityComplete = (priorities: PrioritySettings) => {
     setSelectedPriorities(priorities);
     setCurrentStep('results');
   };
@@ -67,6 +66,13 @@ export default function Home() {
     } else if (currentStep === 'results') {
       setCurrentStep('priority');
     }
+  };
+
+  const handleNewSearch = () => {
+    setSelectedCity(null);
+    setSelectedFood(null);
+    setSelectedPriorities(null);
+    setCurrentStep('city');
   };
 
   return (
@@ -117,25 +123,14 @@ export default function Home() {
         )}
 
         {currentStep === 'results' && (
-          <div className="flex flex-col gap-4 justify-center">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">
-                🎉 Results Coming Soon!
-              </h2>
-              <p className="text-gray-600 mb-4">
-                Your preferences: {selectedCity?.name}, {selectedFood?.name}
-              </p>
-              <p className="text-sm text-gray-500">
-                Priority settings: {JSON.stringify(selectedPriorities)}
-              </p>
-            </div>
-            <Button
-              className="w-60 mx-auto"
-              onClick={handleBack}
-              variant="outline"
-            >
-              Back to Priority Selection
-            </Button>
+          <div className="flex justify-center">
+            <RecommendationsResult
+              city={selectedCity}
+              food={selectedFood}
+              priorities={selectedPriorities}
+              onBack={handleBack}
+              onNewSearch={handleNewSearch}
+            />
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@
 
 import { PRIORITY_ITEMS } from '@/app/data/priorities';
 import { usePrioritySelection } from '@/app/hooks/usePrioritySelection';
-import type { PriorityItem } from '@/app/types/search';
+import type { PriorityItem, PrioritySettings } from '@/app/types/search';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,7 +15,7 @@ import { AvailablePriorities } from './AvailablePriorities';
 import { SelectedPriorities } from './SelectedPriorities';
 
 export interface PrioritySelectorProps {
-  onComplete: (priorities: Record<string, number>) => void;
+  onComplete: (priorities: PrioritySettings) => void;
   onBack: () => void;
   disabled?: boolean;
 }
