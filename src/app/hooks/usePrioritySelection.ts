@@ -3,6 +3,7 @@
 import type {
   PriorityItem,
   PrioritySelectionState,
+  PrioritySettings,
   SelectedPriority,
 } from '@/app/types/search';
 import { useCallback, useState } from 'react';
@@ -67,22 +68,26 @@ export function usePrioritySelection(initialItems: PriorityItem[]) {
   const isComplete = state.selected.length === 3;
 
   // 선택된 우선순위를 PrioritySettings 형태로 변환
-  const getPrioritySettings = useCallback(() => {
-    const settings: Record<string, number> = {};
-
-    // 기본값 설정 (모든 항목을 0으로 초기화)
-    state.available.forEach((item) => {
-      settings[item.id] = 0;
-    });
+  const getPrioritySettings = useCallback((): PrioritySettings => {
+    const settings: PrioritySettings = {
+      taste: 0,
+      atmosphere: 0,
+      price: 0,
+      distance: 0,
+      service: 0,
+      quantity: 0,
+    };
 
     // 선택된 항목에 순위별 가중치 부여
     state.selected.forEach(({ rank, item }) => {
       const weight = rank === 1 ? 3 : rank === 2 ? 2 : 1;
-      settings[item.id] = weight;
+      if (item.id in settings) {
+        settings[item.id as keyof PrioritySettings] = weight;
+      }
     });
 
     return settings;
-  }, [state.available, state.selected]);
+  }, [state.selected]);
 
   return {
     state,

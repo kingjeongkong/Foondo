@@ -1,9 +1,9 @@
 'use client';
 
+import { generateMockRecommendations } from '@/app/data/mockRecommendations';
 import type { City } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
 import type { PrioritySettings } from '@/app/types/search';
-import { generateMockRecommendations } from '@/app/data/mockRecommendations';
 import { Button } from '@/components/ui/button';
 import { RestaurantCard } from './RestaurantCard';
 import { ResultHeader } from './ResultHeader';
@@ -75,4 +75,3 @@ export function RecommendationsResult({
     </div>
   );
 }
-
