@@ -108,12 +108,6 @@ export async function POST(request: NextRequest) {
       `✅ 단계 4 완료: ${restaurantScores.length}개 음식점 랭킹 완료`
     );
 
-    // 단계별 성공 여부 및 개수 계산
-    const step1Success = restaurants.length > 0;
-    const step2Success = reviewsData.length === restaurants.length;
-    const step3Success = successfulReports === reviewsData.length;
-    const step4Success = restaurantScores.length > 0;
-
     // 최종 추천 결과 반환
     return NextResponse.json({
       success: true,
@@ -138,26 +132,7 @@ export async function POST(request: NextRequest) {
           },
         })),
       },
-      message:
-        'Step 1-4 completed: Restaurants searched, reviews analyzed, and recommendations ranked',
-      steps: {
-        step1: {
-          success: step1Success,
-          count: step1Success ? restaurants.length : 0,
-        },
-        step2: {
-          success: step2Success,
-          count: step2Success ? reviewsData.length : 0,
-        },
-        step3: {
-          success: step3Success,
-          count: step3Success ? successfulReports : 0,
-        },
-        step4: {
-          success: step4Success,
-          count: step4Success ? restaurantScores.length : 0,
-        },
-      },
+      message: 'Recommendations generated successfully',
     });
   } catch (error) {
     console.error('❌ 음식점 추천 요청 실패:', error);
