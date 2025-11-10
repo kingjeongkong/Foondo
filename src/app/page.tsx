@@ -6,10 +6,12 @@ import { FoodSelector } from '@/app/components/search/FoodSelector';
 import { PrioritySelector } from '@/app/components/search/PrioritySelector';
 import type { City, CreateCityRequest } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
+import type { Recommendation } from '@/app/types/recommendations';
 import type { PrioritySettings } from '@/app/types/search';
 import { useState } from 'react';
 import { useCity } from './hooks/useCity';
 import { useFood } from './hooks/useFood';
+import { useRecommendation } from './hooks/useRecommendation';
 
 /**
  * 메인 페이지 컴포넌트
@@ -23,12 +25,17 @@ export default function Home() {
   const [currentStep, setCurrentStep] = useState<
     'city' | 'food' | 'priority' | 'results'
   >('city');
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [recommendationError, setRecommendationError] = useState<Error | null>(
+    null
+  );
 
   const { createCity, isCreatingCity } = useCity();
   const { localFoods, isLoadingFoods } = useFood(
     selectedCity,
     currentStep === 'food'
   );
+  const { getRecommendations, isGettingRecommendations } = useRecommendation();
 
   const handleCitySelect = (city: City) => {
     setSelectedCity(city);
@@ -38,9 +45,26 @@ export default function Home() {
     setSelectedFood(food);
   };
 
-  const handlePriorityComplete = (priorities: PrioritySettings) => {
+  const handlePriorityComplete = async (priorities: PrioritySettings) => {
     setSelectedPriorities(priorities);
     setCurrentStep('results');
+    setRecommendationError(null);
+
+    if (selectedCity && selectedFood) {
+      try {
+        // TODO: 전송하는 데이터 수정 필요
+        const result = await getRecommendations({
+          city: selectedCity,
+          food: selectedFood,
+          priorities,
+        });
+        setRecommendations(result.data.recommendations);
+        setRecommendationError(null);
+      } catch (error) {
+        setRecommendationError(error as Error);
+        setRecommendations([]);
+      }
+    }
   };
 
   const handleNext = async () => {
@@ -72,6 +96,8 @@ export default function Home() {
     setSelectedCity(null);
     setSelectedFood(null);
     setSelectedPriorities(null);
+    setRecommendations([]);
+    setRecommendationError(null);
     setCurrentStep('city');
   };
 
@@ -128,6 +154,9 @@ export default function Home() {
               city={selectedCity}
               food={selectedFood}
               priorities={selectedPriorities}
+              recommendations={recommendations}
+              isLoading={isGettingRecommendations}
+              error={recommendationError}
               onBack={handleBack}
               onNewSearch={handleNewSearch}
             />
