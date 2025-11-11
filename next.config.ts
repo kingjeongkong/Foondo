@@ -1,6 +1,14 @@
 import type { NextConfig } from 'next';
+// @ts-ignore - 플러그인이 타입 선언을 제공하지 않음
+const { PrismaPlugin } = require('@prisma/nextjs-monorepo-workaround-plugin');
 
 const nextConfig: NextConfig = {
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.plugins = [...(config.plugins || []), new PrismaPlugin()];
+    }
+    return config;
+  },
   outputFileTracingIncludes: {
     // 모든 경로에 Prisma 파일 포함 (API 라우트뿐만 아니라)
     '/': [
