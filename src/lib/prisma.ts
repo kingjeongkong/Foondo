@@ -10,9 +10,7 @@ const globalForPrisma = globalThis as unknown as {
 const getDatabaseUrl = (): string => {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
-    const error = new Error('DATABASE_URL environment variable is not set');
-    console.error('❌ Prisma initialization error:', error.message);
-    throw error;
+    throw new Error('DATABASE_URL environment variable is not set');
   }
 
   // URL에 이미 쿼리 파라미터가 있는지 확인
@@ -22,37 +20,43 @@ const getDatabaseUrl = (): string => {
   return `${databaseUrl}${separator}prepared_statements=false`;
 };
 
-// Prisma 클라이언트 생성 (싱글톤 패턴)
-// lazy initialization을 위해 함수로 래핑하지 않고 직접 생성
-// Vercel에서는 모듈 로드 시점에 초기화되어야 함
-let prismaInstance: PrismaClient | undefined = globalForPrisma.prisma;
-
-if (!prismaInstance) {
-  try {
-    prismaInstance = new PrismaClient({
-      datasources: {
-        db: {
-          url: getDatabaseUrl(),
-        },
+// Prisma 클라이언트 생성 함수 (lazy initialization)
+// 빌드 시점에는 초기화하지 않고, 런타임에 실제 사용 시점에만 초기화
+const createPrismaClient = (): PrismaClient => {
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url: getDatabaseUrl(),
       },
-      // Prepared Statement 비활성화
-      log:
-        process.env.NODE_ENV === 'development'
-          ? ['query', 'error', 'warn']
-          : ['error'],
-    });
+    },
+    // Prepared Statement 비활성화
+    log: ['error'],
+  });
+};
 
-    // 개발 환경에서만 전역 변수에 저장
-    if (process.env.NODE_ENV !== 'production') {
-      globalForPrisma.prisma = prismaInstance;
-    }
-
-    console.log('✅ Prisma Client initialized successfully');
-  } catch (error) {
-    console.error('❌ Failed to initialize Prisma Client:', error);
-    throw error;
+// Prisma 클라이언트 getter (lazy initialization)
+const getPrismaClient = (): PrismaClient => {
+  if (globalForPrisma.prisma) {
+    return globalForPrisma.prisma;
   }
-}
 
-export const prisma = prismaInstance;
+  const prisma = createPrismaClient();
+
+  // 개발 환경에서만 전역 변수에 저장
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = prisma;
+  }
+
+  return prisma;
+};
+
+// Prisma 클라이언트 export (getter를 통해 lazy initialization)
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const client = getPrismaClient();
+    const value = (client as any)[prop];
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+});
+
 export default prisma;
