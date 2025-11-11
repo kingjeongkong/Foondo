@@ -7,7 +7,7 @@ export const citySchema = z.object({
 });
 
 export const createCitySchema = z.object({
-  mapboxId: z.string().min(1, 'Mapbox ID is required'),
+  id: z.string().min(1, 'City ID is required'),
   name: z.string().min(1, 'City name is required'),
   country: z.string().optional(),
 });
