@@ -4,9 +4,12 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     // 모든 API 라우트에 대해
     '/api/**': [
-      // schema.prisma에 설정된 'output' 경로 내의
-      // 모든 쿼리 엔진 파일을 강제로 포함시킵니다.
-      './src/generated/prisma/**',
+      // Prisma Query Engine 바이너리 파일들을 명시적으로 포함
+      'src/generated/prisma/libquery_engine-rhel-openssl-3.0.x.so.node',
+      'src/generated/prisma/libquery_engine-rhel-openssl-1.1.x.so.node',
+      'src/generated/prisma/libquery_engine-rhel-openssl-1.0.x.so.node',
+      // 모든 Prisma 생성 파일 포함
+      'src/generated/prisma/**',
     ],
   },
   images: {
