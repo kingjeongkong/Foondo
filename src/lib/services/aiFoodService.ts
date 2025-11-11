@@ -62,7 +62,7 @@ function createSystemPrompt(city: City): string {
   You are a travel food curator recommending authentic and diverse local dishes from specific cities.
   
   Recommend exactly ${FOOD_COUNT} must-try foods for a traveler visiting "${city.name}, ${city.country}".
-  Include both iconic classics and hidden local favorites that truly represent this city's food culture.
+  Include both iconic classics and hidden local favorites that truly represent this city's food culture and everyday local favorites that people commonly enjoy.
   
   For each food, provide:
   - name: The food name

@@ -84,8 +84,8 @@ if (!apiKey) {
  */
 export const foodAIService = new OpenAIService({
   apiKey,
-  model: 'gpt-4o-mini',
-  temperature: 0.8,
+  model: 'gpt-4o',
+  temperature: 0.1,
   maxTokens: 1000,
 });
 
@@ -96,6 +96,6 @@ export const foodAIService = new OpenAIService({
 export const reviewAIService = new OpenAIService({
   apiKey,
   model: 'gpt-4o-mini',
-  temperature: 0.3, // 더 정확한 분석을 위해 낮은 temperature
-  maxTokens: 5000, // 더 긴 응답을 위해 높은 토큰 수
+  temperature: 0.1,
+  maxTokens: 5000,
 });
