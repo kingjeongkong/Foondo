@@ -14,15 +14,19 @@ export async function POST(
     const body: CreateCityRequest = await request.json();
     const validatedData = createCitySchema.parse(body);
 
-    const city = await prisma.city.upsert({
-      where: { id: validatedData.mapboxId },
-      update: {},
-      create: {
-        id: validatedData.mapboxId,
-        name: validatedData.name,
-        country: validatedData.country,
-      },
+    let city = await prisma.city.findUnique({
+      where: { id: validatedData.id },
     });
+
+    if (!city) {
+      city = await prisma.city.create({
+        data: {
+          id: validatedData.id,
+          name: validatedData.name,
+          country: validatedData.country,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
