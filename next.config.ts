@@ -15,6 +15,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Prisma 바이너리 파일을 번들에 포함
+      const {
+        PrismaPlugin,
+      } = require('@prisma/nextjs-monorepo-workaround-plugin');
+      config.plugins = [...(config.plugins || []), new PrismaPlugin()];
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
