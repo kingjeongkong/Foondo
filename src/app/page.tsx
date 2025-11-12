@@ -30,7 +30,7 @@ export default function Home() {
     null
   );
 
-  const { createCity, isCreatingCity } = useCity();
+  const { createOrGetCity, isCreatingCity, getCachedCity } = useCity();
   const { localFoods, isLoadingFoods } = useFood(
     selectedCity,
     currentStep === 'food'
@@ -69,14 +69,26 @@ export default function Home() {
 
   const handleNext = async () => {
     if (currentStep === 'city') {
-      const requestData: CreateCityRequest = {
-        mapboxId: selectedCity?.id ?? '',
-        name: selectedCity?.name ?? '',
-        country: selectedCity?.country ?? '',
-      };
-      createCity(requestData).then(() => {
+      if (!selectedCity) {
+        return;
+      }
+
+      // 캐시 확인 (이미 요청한 적이 있는 경우)
+      const cachedCity = getCachedCity(selectedCity.id);
+      if (cachedCity) {
+        // 캐시에 있으면 바로 다음 단계로
         setCurrentStep('food');
-      });
+        return;
+      }
+
+      // POST 요청 (서버에서 존재하면 반환, 없으면 생성)
+      const requestData: CreateCityRequest = {
+        id: selectedCity.id,
+        name: selectedCity.name,
+        country: selectedCity.country ?? '',
+      };
+      await createOrGetCity(requestData);
+      setCurrentStep('food');
     } else if (currentStep === 'food') {
       setCurrentStep('priority');
     }

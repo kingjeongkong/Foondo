@@ -7,6 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "prisma:push": "dotenv -e .env.local -- prisma db push",
     "prisma:generate": "dotenv -e .env.local -- prisma generate",
     "prisma:studio": "dotenv -e .env.local -- prisma studio",

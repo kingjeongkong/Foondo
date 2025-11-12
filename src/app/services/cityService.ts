@@ -1,9 +1,11 @@
 import { CityResponse, CreateCityRequest } from '../types/city';
 
 export function cityService() {
-  const createCity = async (data: CreateCityRequest): Promise<CityResponse> => {
+  const createOrGetCity = async (
+    data: CreateCityRequest
+  ): Promise<CityResponse> => {
     try {
-      const response = await fetch('api/cities', {
+      const response = await fetch('/api/cities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -27,6 +29,6 @@ export function cityService() {
   };
 
   return {
-    createCity,
+    createOrGetCity,
   };
 }
