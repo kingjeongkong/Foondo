@@ -4,7 +4,7 @@ import { FoodResponse } from '@/app/types/food';
 export function foodService() {
   const getFoods = async (city: City): Promise<FoodResponse> => {
     try {
-      const response = await fetch('api/foods', {
+      const response = await fetch('/api/foods', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

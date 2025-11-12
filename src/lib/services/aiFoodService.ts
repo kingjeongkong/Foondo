@@ -18,7 +18,7 @@ const AIGeneratedFoodSchema = z.object({
 const FOOD_COUNT = 10;
 
 /**
- * gpt-4o-mini를 사용하여 특정 도시의 대표 음식 데이터를 생성하고 포맷합니다.
+ * gpt-4o를 사용하여 특정 도시의 대표 음식 데이터를 생성하고 포맷합니다.
  * @param city 도시 정보 객체
  * @returns DB에 저장할 수 있는 음식 데이터 배열
  */
