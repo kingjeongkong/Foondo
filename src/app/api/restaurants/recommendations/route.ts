@@ -55,23 +55,22 @@ export async function POST(request: NextRequest) {
       food.name, // Google Places 검색용
       5 // 최대 5개 검색
     );
-
     console.log(`✅ 단계 1 완료: ${restaurants.length}개 음식점 저장됨`);
 
-    // 단계 2: 리뷰 수집
+    // 단계 2: 리뷰 수집 (리포트 캐싱 포함)
     console.log(`📝 단계 2 실행: 리뷰 수집`);
-    const reviewsData = await collectRestaurantReviews(restaurants);
-
+    const { withReports, withoutReports } =
+      await collectRestaurantReviews(restaurants);
     console.log(
-      `✅ 단계 2 완료: ${reviewsData.length}개 음식점 리뷰 수집 완료`
+      `✅ 단계 2 완료: ${withReports.length}개 캐시됨, ${withoutReports.length}개 리뷰 수집 완료`
     );
 
-    // 단계 3: AI 분석 + 리포트 저장
+    // 단계 3: AI 분석 + 리포트 저장 (리포트가 없는 음식점만)
     console.log(`📝 단계 3 실행: AI 분석 및 리포트 저장`);
 
-    // 병렬로 모든 음식점 처리 (일부 실패 허용)
+    // 리포트가 없는 음식점만 AI 분석 처리 (일부 실패 허용)
     // 에러 처리는 analyzeAndSaveRestaurantReport 내부에서 처리
-    const reportPromises = reviewsData.map((reviewData) =>
+    const reportPromises = withoutReports.map((reviewData) =>
       analyzeAndSaveRestaurantReport(reviewData)
     );
 
@@ -83,24 +82,30 @@ export async function POST(request: NextRequest) {
     ).length;
 
     console.log(
-      `✅ 단계 3 완료: ${successfulReports}/${reviewsData.length}개 리포트 저장 완료`
+      `✅ 단계 3 완료: ${successfulReports}/${withoutReports.length}개 리포트 저장 완료`
     );
 
     // 단계 4: 점수 계산 및 랭킹
     console.log(`📝 단계 4 실행: 점수 계산 및 랭킹`);
 
-    // 1. 성공한 리포트 추출
-    const reports = reportResults
+    // 1. 리포트가 있는 음식점의 리포트 추출
+    const existingReports = withReports.map((item) => item.report);
+
+    // 2. 새로 생성된 리포트 추출
+    const newReports = reportResults
       .filter((result) => result.status === 'fulfilled')
       .map(
         (result) =>
           (result as PromiseFulfilledResult<typeof result.value>).value
       );
 
-    // 2. 점수 계산 및 랭킹
+    // 3. 모든 리포트 합치기
+    const allReports = [...existingReports, ...newReports];
+
+    // 4. 점수 계산 및 랭킹
     const restaurantScores = calculateRestaurantScores(
       restaurants,
-      reports,
+      allReports,
       priorities
     );
 

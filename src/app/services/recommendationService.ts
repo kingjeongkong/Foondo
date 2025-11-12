@@ -9,7 +9,7 @@ export function recommendationService() {
     data: RecommendationRequest
   ): Promise<RecommendationResponse> => {
     try {
-      const response = await fetch('api/restaurants/recommendations', {
+      const response = await fetch('/api/restaurants/recommendations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
