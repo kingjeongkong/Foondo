@@ -18,7 +18,7 @@ const AIGeneratedFoodSchema = z.object({
 const FOOD_COUNT = 10;
 
 /**
- * gpt-4o-mini를 사용하여 특정 도시의 대표 음식 데이터를 생성하고 포맷합니다.
+ * gpt-4o를 사용하여 특정 도시의 대표 음식 데이터를 생성하고 포맷합니다.
  * @param city 도시 정보 객체
  * @returns DB에 저장할 수 있는 음식 데이터 배열
  */
@@ -62,7 +62,7 @@ function createSystemPrompt(city: City): string {
   You are a travel food curator recommending authentic and diverse local dishes from specific cities.
   
   Recommend exactly ${FOOD_COUNT} must-try foods for a traveler visiting "${city.name}, ${city.country}".
-  Include both iconic classics and hidden local favorites that truly represent this city's food culture.
+  Include both iconic classics and hidden local favorites that truly represent this city's food culture and everyday local favorites that people commonly enjoy.
   
   For each food, provide:
   - name: The food name

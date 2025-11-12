@@ -8,6 +8,8 @@ export function useFood(city: City | null, enabled: boolean) {
     queryFn: () => foodService().getFoods(city!),
     enabled: !!city && enabled,
     throwOnError: true,
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 30,
   });
 
   return {

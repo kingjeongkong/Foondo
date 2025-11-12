@@ -37,9 +37,10 @@ export async function POST(
 
     // 4. 생성된 데이터를 DB에 저장하고 실제 ID 반환
     console.log(`💾 DB에 음식 데이터 저장 중: ${aiGeneratedFoods.length}개`);
-    const savedFoods = await prisma.$transaction(
-      aiGeneratedFoods.map((foodData) => prisma.food.create({ data: foodData }))
-    );
+    const savedFoods = await prisma.food.createManyAndReturn({
+      data: aiGeneratedFoods,
+      skipDuplicates: true,
+    });
 
     console.log(
       `✅ AI 생성 및 저장 완료: ${validatedCityData.id} (${savedFoods.length}개)`

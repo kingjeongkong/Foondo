@@ -43,19 +43,24 @@ export class OpenAIService {
     userPrompt: string
   ): Promise<OpenAIResponse<T>> {
     try {
-      const response = await this.client.responses.create({
-        model: this.config.model!,
-        instructions: systemPrompt,
-        input: userPrompt,
-        temperature: this.config.temperature,
-      });
+      const response = await this.client.responses.create(
+        {
+          model: this.config.model!,
+          instructions: systemPrompt,
+          input: userPrompt,
+          temperature: this.config.temperature,
+        },
+        { maxRetries: 1 }
+      );
 
       const output = response.output_text as string | undefined;
       if (!output) {
         throw new Error('No content generated');
       }
 
-      const jsonData = JSON.parse(output);
+      // 마크다운 코드 블록 제거
+      const cleanedOutput = removeMarkdownCodeBlocks(output);
+      const jsonData = JSON.parse(cleanedOutput);
 
       return {
         data: jsonData,
@@ -84,8 +89,8 @@ if (!apiKey) {
  */
 export const foodAIService = new OpenAIService({
   apiKey,
-  model: 'gpt-4o-mini',
-  temperature: 0.8,
+  model: 'gpt-4o',
+  temperature: 0.1,
   maxTokens: 1000,
 });
 
@@ -96,6 +101,34 @@ export const foodAIService = new OpenAIService({
 export const reviewAIService = new OpenAIService({
   apiKey,
   model: 'gpt-4o-mini',
-  temperature: 0.3, // 더 정확한 분석을 위해 낮은 temperature
-  maxTokens: 5000, // 더 긴 응답을 위해 높은 토큰 수
+  temperature: 0.1,
+  maxTokens: 5000,
 });
+
+/**
+ * 마크다운 코드 블록을 제거하고 순수 JSON 문자열을 반환합니다.
+ * @param text 마크다운이 포함될 수 있는 텍스트
+ * @returns 마크다운 코드 블록이 제거된 텍스트
+ */
+function removeMarkdownCodeBlocks(text: string): string {
+  let cleaned = text.trim();
+
+  // ```json 또는 ```로 시작하는 경우 제거
+  if (cleaned.startsWith('```')) {
+    // 첫 번째 줄 제거 (```json 또는 ```)
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '');
+    // 마지막 ``` 제거
+    cleaned = cleaned.replace(/\n?```\s*$/, '');
+  }
+
+  // 앞뒤 공백 및 줄바꿈 제거
+  cleaned = cleaned.trim();
+
+  // JSON 객체 부분만 추출 (앞뒤에 불필요한 텍스트가 있는 경우)
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return jsonMatch[0];
+  }
+
+  return cleaned;
+}
