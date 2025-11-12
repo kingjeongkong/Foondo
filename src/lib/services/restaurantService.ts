@@ -62,88 +62,179 @@ export async function searchAndSaveRestaurants(
 
 /**
  * 여러 음식점의 리뷰를 수집합니다.
- * - 리뷰가 없는 음식점도 포함되며, reviews: []로 반환됩니다.
- * - 에러가 발생한 음식점도 포함되며, reviews: []로 반환됩니다.
+ * - 리포트가 이미 있는 음식점은 리뷰 수집을 스킵하고 리포트 데이터를 반환합니다.
+ * - 리포트가 없는 음식점만 Google Places API로 리뷰를 수집합니다.
  * @param restaurants 단계 1에서 저장된 음식점 배열 (DB 모델)
- * @returns 각 음식점의 리뷰 텍스트 배열 (모든 음식점 포함, 리뷰 없으면 [])
+ * @returns 리포트가 있는 음식점과 없는 음식점을 분리하여 반환
  */
 export async function collectRestaurantReviews(
   restaurants: Array<{ id: string; placeId: string }>
-): Promise<
-  Array<{
-    restaurantId: string; // DB의 restaurant.id
+): Promise<{
+  withReports: Array<{
+    restaurantId: string;
     placeId: string;
-    reviews: string[]; // AI 분석용 텍스트만 추출 (리뷰 없으면 빈 배열)
-  }>
-> {
+    report: {
+      restaurantId: string;
+      tasteScore: number | null;
+      priceScore: number | null;
+      atmosphereScore: number | null;
+      serviceScore: number | null;
+      quantityScore: number | null;
+      aiSummary: string | null;
+    };
+  }>;
+  withoutReports: Array<{
+    restaurantId: string;
+    placeId: string;
+    reviews: string[];
+  }>;
+}> {
   if (restaurants.length === 0) {
-    return [];
+    return { withReports: [], withoutReports: [] };
   }
 
   console.log(`📝 단계 2 실행: ${restaurants.length}개 음식점 리뷰 수집 시작`);
 
-  // placeId 배열 추출
-  const placeIds = restaurants.map((r) => r.placeId);
-
-  // 병렬로 모든 음식점의 리뷰를 수집 (getMultipleRestaurantReviews 활용)
-  const reviewsResults = await getMultipleRestaurantReviews(placeIds);
-
-  // 모든 음식점에 대해 결과 생성 (리뷰 없어도 포함)
-  const results = restaurants.map((restaurant) => {
-    const reviewResult = reviewsResults.find(
-      (r) => r.placeId === restaurant.placeId
-    );
-
-    // 리뷰 결과가 없거나 리뷰가 없으면 빈 배열
-    if (
-      !reviewResult ||
-      !reviewResult.reviews ||
-      reviewResult.reviews.length === 0
-    ) {
-      console.log(`⚠️ 리뷰 없음: ${restaurant.placeId}`);
-      return {
-        restaurantId: restaurant.id,
-        placeId: restaurant.placeId,
-        reviews: [], // 빈 배열로 반환
-      };
-    }
-
-    // 리뷰 텍스트만 추출
-    const reviewTexts = reviewResult.reviews
-      .map((review) => review.text)
-      .filter(Boolean);
-
-    // 유효한 텍스트가 없으면 빈 배열
-    if (reviewTexts.length === 0) {
-      console.log(`⚠️ 유효한 리뷰 텍스트 없음: ${restaurant.placeId}`);
-      return {
-        restaurantId: restaurant.id,
-        placeId: restaurant.placeId,
-        reviews: [], // 빈 배열로 반환
-      };
-    }
-
-    return {
-      restaurantId: restaurant.id,
-      placeId: restaurant.placeId,
-      reviews: reviewTexts,
-    };
+  // 1. 먼저 모든 음식점의 리포트 일괄 조회
+  const restaurantIds = restaurants.map((r) => r.id);
+  const existingReports = await prisma.restaurantReport.findMany({
+    where: {
+      restaurantId: { in: restaurantIds },
+      tasteScore: { not: null }, // 점수가 있는 리포트만 (완전한 리포트)
+    },
   });
 
-  const restaurantsWithReviews = results.filter((r) => r.reviews.length > 0);
-
-  console.log(
-    `✅ 단계 2 완료: ${restaurantsWithReviews.length}/${restaurants.length}개 음식점에 리뷰 있음 (나머지는 빈 배열)`
+  // 리포트 Map 생성 (빠른 조회용)
+  const reportMap = new Map(
+    existingReports.map((report) => [
+      report.restaurantId,
+      {
+        restaurantId: report.restaurantId,
+        tasteScore: report.tasteScore,
+        priceScore: report.priceScore,
+        atmosphereScore: report.atmosphereScore,
+        serviceScore: report.serviceScore,
+        quantityScore: report.quantityScore,
+        aiSummary: report.aiSummary,
+      },
+    ])
   );
 
-  return results; // 모든 음식점 포함
+  // 2. 리포트가 있는 음식점과 없는 음식점 분리
+  const restaurantsWithReports: Array<{
+    restaurantId: string;
+    placeId: string;
+    report: {
+      restaurantId: string;
+      tasteScore: number | null;
+      priceScore: number | null;
+      atmosphereScore: number | null;
+      serviceScore: number | null;
+      quantityScore: number | null;
+      aiSummary: string | null;
+    };
+  }> = [];
+
+  const restaurantsNeedingReviews: Array<{
+    id: string;
+    placeId: string;
+  }> = [];
+
+  restaurants.forEach((restaurant) => {
+    const existingReport = reportMap.get(restaurant.id);
+    if (existingReport) {
+      // 리포트가 있는 경우
+      restaurantsWithReports.push({
+        restaurantId: restaurant.id,
+        placeId: restaurant.placeId,
+        report: existingReport,
+      });
+    } else {
+      // 리포트가 없는 경우
+      restaurantsNeedingReviews.push(restaurant);
+    }
+  });
+
+  console.log(
+    `📊 리포트 캐싱: ${restaurantsWithReports.length}개 이미 있음, ${restaurantsNeedingReviews.length}개 리뷰 수집 필요`
+  );
+
+  // 3. 리포트가 없는 음식점만 Google Places API 호출
+  const withoutReports: Array<{
+    restaurantId: string;
+    placeId: string;
+    reviews: string[];
+  }> = [];
+
+  if (restaurantsNeedingReviews.length > 0) {
+    const placeIds = restaurantsNeedingReviews.map((r) => r.placeId);
+    const reviewsResults = await getMultipleRestaurantReviews(placeIds);
+
+    // 리뷰 수집 결과 처리
+    restaurantsNeedingReviews.forEach((restaurant) => {
+      const reviewResult = reviewsResults.find(
+        (r) => r.placeId === restaurant.placeId
+      );
+
+      // 리뷰 결과가 없거나 리뷰가 없으면 빈 배열
+      if (
+        !reviewResult ||
+        !reviewResult.reviews ||
+        reviewResult.reviews.length === 0
+      ) {
+        console.log(`⚠️ 리뷰 없음: ${restaurant.placeId}`);
+        withoutReports.push({
+          restaurantId: restaurant.id,
+          placeId: restaurant.placeId,
+          reviews: [],
+        });
+        return;
+      }
+
+      // 리뷰 텍스트만 추출
+      const reviewTexts = reviewResult.reviews
+        .map((review) => review.text)
+        .filter(Boolean);
+
+      // 유효한 텍스트가 없으면 빈 배열
+      if (reviewTexts.length === 0) {
+        console.log(`⚠️ 유효한 리뷰 텍스트 없음: ${restaurant.placeId}`);
+        withoutReports.push({
+          restaurantId: restaurant.id,
+          placeId: restaurant.placeId,
+          reviews: [],
+        });
+        return;
+      }
+
+      withoutReports.push({
+        restaurantId: restaurant.id,
+        placeId: restaurant.placeId,
+        reviews: reviewTexts,
+      });
+    });
+  }
+
+  const restaurantsWithCollectedReviews = withoutReports.filter(
+    (r) => r.reviews.length > 0
+  );
+
+  console.log(
+    `✅ 단계 2 완료: ${restaurantsWithReports.length}개 캐시됨, ${restaurantsWithCollectedReviews.length}/${restaurantsNeedingReviews.length}개 리뷰 수집됨`
+  );
+
+  return {
+    withReports: restaurantsWithReports,
+    withoutReports,
+  };
 }
 
 /**
  * 음식점의 리뷰를 AI로 분석하고 리포트를 생성/업데이트합니다.
+ * - 리포트가 없는 음식점 데이터만 받습니다 (이미 collectRestaurantReviews에서 필터링됨)
  * - 리뷰가 없는 경우: 기본 리포트 생성 (모든 점수 null)
- * - 리뷰가 있는 경우: 캐싱 확인 후 AI 분석 실행
- * @param reviewData 리뷰 데이터
+ * - 리뷰가 있는 경우: AI 분석 실행
+ * @param reviewData 리뷰 데이터 (리포트가 없는 음식점만)
  * @returns 생성/업데이트된 리포트
  */
 export async function analyzeAndSaveRestaurantReport(reviewData: {
@@ -162,21 +253,7 @@ export async function analyzeAndSaveRestaurantReport(reviewData: {
       });
     }
 
-    // 리뷰 있음 → 기존 리포트 확인 후 AI 분석
-
-    // 기존 리포트 확인 (캐싱)
-    const existingReport = await prisma.restaurantReport.findUnique({
-      where: { restaurantId: reviewData.restaurantId },
-    });
-
-    // 리포트가 있고 점수가 있으면 재분석 스킵 (캐싱)
-    if (existingReport && existingReport.tasteScore !== null) {
-      console.log(`⏭️ 리포트 존재 - 재분석 스킵: ${reviewData.restaurantId}`);
-      // 추후 lastUpdated를 기준으로 시간 기반 재분석 로직 추가 가능
-      return existingReport;
-    }
-
-    // 리포트가 없거나 점수가 null이면 AI 분석 실행
+    // 리뷰 있음 → AI 분석 실행
     console.log(
       `🤖 AI 분석 시작: ${reviewData.restaurantId} (${reviewData.reviews.length}개 리뷰)`
     );
