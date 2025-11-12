@@ -43,12 +43,15 @@ export class OpenAIService {
     userPrompt: string
   ): Promise<OpenAIResponse<T>> {
     try {
-      const response = await this.client.responses.create({
-        model: this.config.model!,
-        instructions: systemPrompt,
-        input: userPrompt,
-        temperature: this.config.temperature,
-      });
+      const response = await this.client.responses.create(
+        {
+          model: this.config.model!,
+          instructions: systemPrompt,
+          input: userPrompt,
+          temperature: this.config.temperature,
+        },
+        { maxRetries: 1 }
+      );
 
       const output = response.output_text as string | undefined;
       if (!output) {
