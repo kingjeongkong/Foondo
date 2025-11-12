@@ -55,7 +55,9 @@ export class OpenAIService {
         throw new Error('No content generated');
       }
 
-      const jsonData = JSON.parse(output);
+      // 마크다운 코드 블록 제거
+      const cleanedOutput = removeMarkdownCodeBlocks(output);
+      const jsonData = JSON.parse(cleanedOutput);
 
       return {
         data: jsonData,
@@ -99,3 +101,31 @@ export const reviewAIService = new OpenAIService({
   temperature: 0.1,
   maxTokens: 5000,
 });
+
+/**
+ * 마크다운 코드 블록을 제거하고 순수 JSON 문자열을 반환합니다.
+ * @param text 마크다운이 포함될 수 있는 텍스트
+ * @returns 마크다운 코드 블록이 제거된 텍스트
+ */
+function removeMarkdownCodeBlocks(text: string): string {
+  let cleaned = text.trim();
+
+  // ```json 또는 ```로 시작하는 경우 제거
+  if (cleaned.startsWith('```')) {
+    // 첫 번째 줄 제거 (```json 또는 ```)
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '');
+    // 마지막 ``` 제거
+    cleaned = cleaned.replace(/\n?```\s*$/, '');
+  }
+
+  // 앞뒤 공백 및 줄바꿈 제거
+  cleaned = cleaned.trim();
+
+  // JSON 객체 부분만 추출 (앞뒤에 불필요한 텍스트가 있는 경우)
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return jsonMatch[0];
+  }
+
+  return cleaned;
+}
