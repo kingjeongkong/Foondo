@@ -1,3 +1,27 @@
+import { z } from 'zod';
+
+// Mapbox API 응답 검증을 위한 Zod 스키마
+const mapboxContextSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  short_code: z.string().optional(),
+});
+
+const mapboxFeatureSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  place_name: z.string(),
+  center: z.tuple([z.number(), z.number()]), // [lng, lat]
+  context: z.array(mapboxContextSchema).optional(),
+});
+
+const mapboxGeocodingResponseSchema = z.object({
+  features: z.array(mapboxFeatureSchema),
+});
+
+// 외부에서 사용되는 타입만 export
+export type MapboxSearchResult = z.infer<typeof mapboxFeatureSchema>;
+
 export interface MapboxLocation {
   id: string;
   city: string;
@@ -5,32 +29,6 @@ export interface MapboxLocation {
   country: string;
   lat: number;
   lng: number;
-}
-
-export interface MapboxGeocodingResponse {
-  features: Array<{
-    id: string;
-    text: string;
-    place_name: string;
-    center: [number, number]; // [lng, lat]
-    context?: Array<{
-      id: string;
-      text: string;
-      short_code?: string;
-    }>;
-  }>;
-}
-
-export interface MapboxSearchResult {
-  id: string;
-  text: string;
-  place_name: string;
-  center: [number, number];
-  context?: Array<{
-    id: string;
-    text: string;
-    short_code?: string;
-  }>;
 }
 
 /**
@@ -64,13 +62,22 @@ export async function searchLocations(
       );
     }
 
-    const data: MapboxGeocodingResponse = await response.json();
+    const rawData = await response.json();
+
+    // Zod 스키마로 응답 검증
+    const data = mapboxGeocodingResponseSchema.parse(rawData);
 
     console.log('Map box data', data);
 
     return data.features || [];
   } catch (error) {
     console.error('Mapbox 위치 검색 중 오류 발생:', error);
+
+    if (error instanceof z.ZodError) {
+      console.error('Mapbox API 응답 검증 실패:', error.issues);
+      throw new Error('Mapbox API 응답 형식이 올바르지 않습니다');
+    }
+
     throw new Error('위치 검색에 실패했습니다');
   }
 }
@@ -102,7 +109,10 @@ export async function getLocationFromCoordinates(
       );
     }
 
-    const data: MapboxGeocodingResponse = await response.json();
+    const rawData = await response.json();
+
+    // Zod 스키마로 응답 검증
+    const data = mapboxGeocodingResponseSchema.parse(rawData);
 
     if (!data.features || data.features.length === 0) {
       throw new Error('주어진 좌표에 대한 위치를 찾을 수 없습니다');
@@ -143,6 +153,12 @@ export async function getLocationFromCoordinates(
     };
   } catch (error) {
     console.error('Mapbox 좌표에서 위치 정보 가져오기 오류:', error);
+
+    if (error instanceof z.ZodError) {
+      console.error('Mapbox API 응답 검증 실패:', error.issues);
+      throw new Error('Mapbox API 응답 형식이 올바르지 않습니다');
+    }
+
     throw new Error('Mapbox에서 위치 정보를 가져오는데 실패했습니다');
   }
 }
