@@ -1,24 +1,6 @@
 import { reviewAIService } from '@/lib/openAI';
 import { z } from 'zod';
 
-// AI 분석 결과 타입 정의
-export interface AIAnalysisResult {
-  scores: {
-    taste: number; // 맛의 품질과 풍미 (0-100)
-    price: number; // 가격 대비 가치 (0-100)
-    atmosphere: number; // 분위기와 인테리어 (0-100)
-    service: number; // 서비스 품질 (0-100)
-    quantity: number; // 음식의 양과 포만감 (0-100)
-    accessibility: number; // 접근성과 위치 (0-100)
-  };
-  summary: string; // AI 한 줄 요약
-  keywords: {
-    positive: string[]; // 긍정 키워드
-    negative: string[]; // 부정 키워드
-  };
-  confidence: number; // 분석 신뢰도 (0-100)
-}
-
 // AI 응답 검증을 위한 Zod 스키마
 const AIAnalysisSchema = z.object({
   scores: z.object({
@@ -36,6 +18,8 @@ const AIAnalysisSchema = z.object({
   }),
   confidence: z.number().min(0).max(100),
 });
+
+export type AIAnalysisResult = z.infer<typeof AIAnalysisSchema>;
 
 /**
  * 리뷰 텍스트를 분석하여 6가지 요소에 대한 객관적인 점수를 생성합니다.
@@ -61,12 +45,11 @@ export async function analyzeReviewsWithAI(
       reviews.join('\n\n')
     );
 
-    // 응답 검증 및 후처리
-    const validatedResult = validateAndProcessResult(response.data);
+    const validatedResult = AIAnalysisSchema.parse(response.data);
 
     console.log(`✅ AI 리뷰 분석 완료: 신뢰도 ${validatedResult.confidence}%`);
 
-    return response.data as AIAnalysisResult;
+    return validatedResult;
   } catch (error) {
     console.error('AI 리뷰 분석 실패:', error);
     throw new Error('리뷰 분석에 실패했습니다');
@@ -119,60 +102,6 @@ OUTPUT FORMAT (JSON only, no other text):
 
 All outputs must be in English.
 `;
-}
-
-/**
- * AI 응답을 검증하고 후처리합니다.
- */
-function validateAndProcessResult(data: AIAnalysisResult): AIAnalysisResult {
-  try {
-    // Zod 스키마로 검증
-    const validated = AIAnalysisSchema.parse(data);
-
-    // 점수 범위 클램핑 및 소수점 처리
-    const processedScores = Object.fromEntries(
-      Object.entries(validated.scores).map(([key, value]) => [
-        key,
-        Math.max(0, Math.min(100, Math.round(value * 10) / 10)), // 소수점 1자리
-      ])
-    ) as AIAnalysisResult['scores'];
-
-    // 신뢰도 클램핑
-    const processedConfidence = Math.max(
-      0,
-      Math.min(100, Math.round(validated.confidence))
-    );
-
-    return {
-      scores: processedScores,
-      summary: validated.summary.trim(),
-      keywords: {
-        positive: validated.keywords.positive.slice(0, 10),
-        negative: validated.keywords.negative.slice(0, 10),
-      },
-      confidence: processedConfidence,
-    };
-  } catch (error) {
-    console.error('AI 응답 검증 실패:', error);
-
-    // 검증 실패 시 기본값 반환
-    return {
-      scores: {
-        taste: 50,
-        price: 50,
-        atmosphere: 50,
-        service: 50,
-        quantity: 50,
-        accessibility: 50,
-      },
-      summary: 'Analysis failed - using default scores',
-      keywords: {
-        positive: [],
-        negative: [],
-      },
-      confidence: 0,
-    };
-  }
 }
 
 /**
