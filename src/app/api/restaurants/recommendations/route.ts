@@ -88,10 +88,7 @@ export async function POST(request: NextRequest) {
     // 단계 4: 점수 계산 및 랭킹
     console.log(`📝 단계 4 실행: 점수 계산 및 랭킹`);
 
-    // 1. 리포트가 있는 음식점의 리포트 추출
-    const existingReports = withReports.map((item) => item.report);
-
-    // 2. 새로 생성된 리포트 추출
+    // 1. 새로 생성된 리포트 추출
     const newReports = reportResults
       .filter((result) => result.status === 'fulfilled')
       .map(
@@ -99,8 +96,8 @@ export async function POST(request: NextRequest) {
           (result as PromiseFulfilledResult<typeof result.value>).value
       );
 
-    // 3. 모든 리포트 합치기
-    const allReports = [...existingReports, ...newReports];
+    // 2. 모든 리포트 합치기
+    const allReports = [...withReports, ...newReports];
 
     // 4. 점수 계산 및 랭킹
     const restaurantScores = calculateRestaurantScores(

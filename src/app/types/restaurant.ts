@@ -5,18 +5,11 @@ export type { Restaurant, RestaurantReport };
 
 export interface ReviewData {
   restaurantId: string;
-  placeId: string;
   reviews: string[];
 }
 
-export interface RestaurantWithReport {
-  restaurantId: string;
-  placeId: string;
-  report: RestaurantReport;
-}
-
 export interface ReviewCollectionResult {
-  withReports: RestaurantWithReport[];
+  withReports: RestaurantReport[];
   withoutReports: ReviewData[];
 }
 
