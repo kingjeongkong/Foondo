@@ -1,0 +1,28 @@
+import type { Restaurant, RestaurantReport } from '@prisma/client';
+
+// Prisma 타입 재export (편의용)
+export type { Restaurant, RestaurantReport };
+
+export interface ReviewData {
+  restaurantId: string;
+  placeId: string;
+  reviews: string[];
+}
+
+export interface RestaurantWithReport {
+  restaurantId: string;
+  placeId: string;
+  report: RestaurantReport;
+}
+
+export interface ReviewCollectionResult {
+  withReports: RestaurantWithReport[];
+  withoutReports: ReviewData[];
+}
+
+export interface ScoredRestaurant {
+  restaurant: Restaurant;
+  report: RestaurantReport;
+  finalScore: number;
+  rank: number;
+}

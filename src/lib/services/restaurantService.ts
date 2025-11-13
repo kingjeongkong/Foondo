@@ -1,3 +1,11 @@
+import type {
+  Restaurant,
+  RestaurantReport,
+  RestaurantWithReport,
+  ReviewCollectionResult,
+  ReviewData,
+  ScoredRestaurant,
+} from '@/app/types/restaurant';
 import type { PrioritySettings } from '@/app/types/search';
 import {
   getMultipleRestaurantReviews,
@@ -68,27 +76,8 @@ export async function searchAndSaveRestaurants(
  * @returns 리포트가 있는 음식점과 없는 음식점을 분리하여 반환
  */
 export async function collectRestaurantReviews(
-  restaurants: Array<{ id: string; placeId: string }>
-): Promise<{
-  withReports: Array<{
-    restaurantId: string;
-    placeId: string;
-    report: {
-      restaurantId: string;
-      tasteScore: number | null;
-      priceScore: number | null;
-      atmosphereScore: number | null;
-      serviceScore: number | null;
-      quantityScore: number | null;
-      aiSummary: string | null;
-    };
-  }>;
-  withoutReports: Array<{
-    restaurantId: string;
-    placeId: string;
-    reviews: string[];
-  }>;
-}> {
+  restaurants: Pick<Restaurant, 'id' | 'placeId'>[]
+): Promise<ReviewCollectionResult> {
   if (restaurants.length === 0) {
     return { withReports: [], withoutReports: [] };
   }
@@ -106,39 +95,13 @@ export async function collectRestaurantReviews(
 
   // 리포트 Map 생성 (빠른 조회용)
   const reportMap = new Map(
-    existingReports.map((report) => [
-      report.restaurantId,
-      {
-        restaurantId: report.restaurantId,
-        tasteScore: report.tasteScore,
-        priceScore: report.priceScore,
-        atmosphereScore: report.atmosphereScore,
-        serviceScore: report.serviceScore,
-        quantityScore: report.quantityScore,
-        aiSummary: report.aiSummary,
-      },
-    ])
+    existingReports.map((report) => [report.restaurantId, report])
   );
 
   // 2. 리포트가 있는 음식점과 없는 음식점 분리
-  const restaurantsWithReports: Array<{
-    restaurantId: string;
-    placeId: string;
-    report: {
-      restaurantId: string;
-      tasteScore: number | null;
-      priceScore: number | null;
-      atmosphereScore: number | null;
-      serviceScore: number | null;
-      quantityScore: number | null;
-      aiSummary: string | null;
-    };
-  }> = [];
+  const restaurantsWithReports: RestaurantWithReport[] = [];
 
-  const restaurantsNeedingReviews: Array<{
-    id: string;
-    placeId: string;
-  }> = [];
+  const restaurantsNeedingReviews: Pick<Restaurant, 'id' | 'placeId'>[] = [];
 
   restaurants.forEach((restaurant) => {
     const existingReport = reportMap.get(restaurant.id);
@@ -160,11 +123,7 @@ export async function collectRestaurantReviews(
   );
 
   // 3. 리포트가 없는 음식점만 Google Places API 호출
-  const withoutReports: Array<{
-    restaurantId: string;
-    placeId: string;
-    reviews: string[];
-  }> = [];
+  const withoutReports: ReviewData[] = [];
 
   if (restaurantsNeedingReviews.length > 0) {
     const placeIds = restaurantsNeedingReviews.map((r) => r.placeId);
@@ -237,11 +196,9 @@ export async function collectRestaurantReviews(
  * @param reviewData 리뷰 데이터 (리포트가 없는 음식점만)
  * @returns 생성/업데이트된 리포트
  */
-export async function analyzeAndSaveRestaurantReport(reviewData: {
-  restaurantId: string;
-  placeId: string;
-  reviews: string[];
-}) {
+export async function analyzeAndSaveRestaurantReport(
+  reviewData: ReviewData
+): Promise<RestaurantReport> {
   try {
     if (reviewData.reviews.length === 0) {
       // 리뷰 없음 → 기본 리포트 생성 (모든 점수 null)
@@ -310,42 +267,10 @@ export async function analyzeAndSaveRestaurantReport(reviewData: {
  * @returns 랭킹 정렬된 음식점 결과 배열
  */
 export function calculateRestaurantScores(
-  restaurants: Array<{
-    id: string;
-    placeId: string;
-    name: string | null;
-    address: string | null;
-    photoUrl: string | null;
-  }>,
-  reports: Array<{
-    restaurantId: string;
-    tasteScore: number | null;
-    priceScore: number | null;
-    atmosphereScore: number | null;
-    serviceScore: number | null;
-    quantityScore: number | null;
-    aiSummary: string | null;
-  }>,
+  restaurants: Restaurant[],
+  reports: RestaurantReport[],
   priorities: PrioritySettings
-): Array<{
-  restaurant: {
-    id: string;
-    placeId: string;
-    name: string | null;
-    address: string | null;
-    photoUrl: string | null;
-  };
-  report: {
-    tasteScore: number | null;
-    priceScore: number | null;
-    atmosphereScore: number | null;
-    serviceScore: number | null;
-    quantityScore: number | null;
-    aiSummary: string | null;
-  };
-  finalScore: number;
-  rank: number;
-}> {
+): ScoredRestaurant[] {
   // 1. 우선순위를 가중치로 변환 (distance 제외)
   const weightMap: Record<number, number> = {
     3: 3.0, // 1순위
@@ -421,14 +346,7 @@ export function calculateRestaurantScores(
 
       return {
         restaurant,
-        report: {
-          tasteScore: report.tasteScore,
-          priceScore: report.priceScore,
-          atmosphereScore: report.atmosphereScore,
-          serviceScore: report.serviceScore,
-          quantityScore: report.quantityScore,
-          aiSummary: report.aiSummary,
-        },
+        report,
         finalScore,
       };
     })

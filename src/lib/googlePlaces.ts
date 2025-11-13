@@ -1,79 +1,53 @@
-// Google Places API 관련 타입 정의
-export interface GooglePlaceResult {
-  place_id: string;
-  name: string;
-  formatted_address: string;
-  rating?: number;
-  user_ratings_total?: number;
-  photos?: Array<{
-    photo_reference: string;
-    height: number;
-    width: number;
-  }>;
-  price_level?: number;
-  geometry?: {
-    location: {
-      lat: number;
-      lng: number;
-    };
-  };
-}
+import { z } from 'zod';
 
-export interface GooglePlacesTextSearchResponse {
-  results: GooglePlaceResult[];
-  status: string;
-  next_page_token?: string;
-}
+// Google Places API 응답 검증을 위한 Zod 스키마
+const googlePlacePhotoSchema = z.object({
+  photo_reference: z.string(),
+  height: z.number(),
+  width: z.number(),
+});
 
-export interface GooglePlaceDetailsResponse {
-  result: {
-    place_id?: string;
-    name?: string;
-    formatted_address?: string;
-    rating?: number;
-    user_ratings_total?: number;
-    geometry?: {
-      location: {
-        lat: number;
-        lng: number;
-      };
-    };
-    reviews?: Array<{
-      author_name: string;
-      rating: number;
-      text: string;
-      time: number;
-      relative_time_description: string;
-    }>;
-    photos?: Array<{
-      photo_reference: string;
-      height: number;
-      width: number;
-    }>;
-    price_level?: number;
-    opening_hours?: {
-      open_now: boolean;
-      weekday_text: string[];
-    };
-  };
-  status: string;
-}
+const googlePlaceGeometrySchema = z.object({
+  location: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }),
+});
 
-export interface GooglePlaceReview {
-  author_name: string;
-  rating: number;
-  text: string;
-  time: number;
-  relative_time_description: string;
-}
+const googlePlaceResultSchema = z.object({
+  place_id: z.string(),
+  name: z.string(),
+  formatted_address: z.string(),
+  rating: z.number().optional(),
+  user_ratings_total: z.number().optional(),
+  photos: z.array(googlePlacePhotoSchema).optional(),
+  price_level: z.number().optional(),
+  geometry: googlePlaceGeometrySchema.optional(),
+});
 
-// 리뷰만 요청할 때 사용하는 최적화된 응답 타입
-export interface GooglePlaceReviewsOnlyResponse {
-  result: {
-    reviews?: GooglePlaceReview[];
-  };
-  status: string;
-}
+const googlePlacesTextSearchResponseSchema = z.object({
+  results: z.array(googlePlaceResultSchema),
+  status: z.string(),
+  next_page_token: z.string().optional(),
+});
+
+const googlePlaceReviewSchema = z.object({
+  author_name: z.string(),
+  rating: z.number(),
+  text: z.string(),
+  time: z.number(),
+  relative_time_description: z.string(),
+});
+
+const googlePlaceReviewsOnlyResponseSchema = z.object({
+  result: z.object({
+    reviews: z.array(googlePlaceReviewSchema).optional(),
+  }),
+  status: z.string(),
+});
+
+// 외부에서 사용되는 타입만 export
+export type GooglePlaceReview = z.infer<typeof googlePlaceReviewSchema>;
 
 // 표준화된 레스토랑 데이터 타입
 export interface RestaurantData {
@@ -129,7 +103,10 @@ export async function searchRestaurantsByFood(
       );
     }
 
-    const data: GooglePlacesTextSearchResponse = await response.json();
+    const rawData = await response.json();
+
+    // Zod 스키마로 응답 검증
+    const data = googlePlacesTextSearchResponseSchema.parse(rawData);
 
     if (data.status !== 'OK') {
       throw new Error(`Google Places API error: ${data.status}`);
@@ -154,6 +131,12 @@ export async function searchRestaurantsByFood(
     return restaurants;
   } catch (error) {
     console.error('Google Places 레스토랑 검색 중 오류 발생:', error);
+
+    if (error instanceof z.ZodError) {
+      console.error('Google Places API 응답 검증 실패:', error.issues);
+      throw new Error('Google Places API 응답 형식이 올바르지 않습니다');
+    }
+
     throw new Error('레스토랑 검색에 실패했습니다');
   }
 }
@@ -192,7 +175,10 @@ export async function getRestaurantReviews(
       );
     }
 
-    const data: GooglePlaceReviewsOnlyResponse = await response.json();
+    const rawData = await response.json();
+
+    // Zod 스키마로 응답 검증
+    const data = googlePlaceReviewsOnlyResponseSchema.parse(rawData);
 
     if (data.status !== 'OK') {
       throw new Error(`Google Places API error: ${data.status}`);
@@ -205,6 +191,12 @@ export async function getRestaurantReviews(
     return reviews;
   } catch (error) {
     console.error('Google Places 리뷰 조회 중 오류 발생:', error);
+
+    if (error instanceof z.ZodError) {
+      console.error('Google Places API 응답 검증 실패:', error.issues);
+      throw new Error('Google Places API 응답 형식이 올바르지 않습니다');
+    }
+
     throw new Error('레스토랑 리뷰 조회에 실패했습니다');
   }
 }
