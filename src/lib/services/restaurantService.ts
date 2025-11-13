@@ -1,7 +1,6 @@
 import type {
   Restaurant,
   RestaurantReport,
-  RestaurantWithReport,
   ReviewCollectionResult,
   ReviewData,
   ScoredRestaurant,
@@ -99,7 +98,7 @@ export async function collectRestaurantReviews(
   );
 
   // 2. 리포트가 있는 음식점과 없는 음식점 분리
-  const restaurantsWithReports: RestaurantWithReport[] = [];
+  const restaurantsWithReports: RestaurantReport[] = [];
 
   const restaurantsNeedingReviews: Pick<Restaurant, 'id' | 'placeId'>[] = [];
 
@@ -107,11 +106,7 @@ export async function collectRestaurantReviews(
     const existingReport = reportMap.get(restaurant.id);
     if (existingReport) {
       // 리포트가 있는 경우
-      restaurantsWithReports.push({
-        restaurantId: restaurant.id,
-        placeId: restaurant.placeId,
-        report: existingReport,
-      });
+      restaurantsWithReports.push(existingReport);
     } else {
       // 리포트가 없는 경우
       restaurantsNeedingReviews.push(restaurant);
@@ -144,7 +139,6 @@ export async function collectRestaurantReviews(
         console.log(`⚠️ 리뷰 없음: ${restaurant.placeId}`);
         withoutReports.push({
           restaurantId: restaurant.id,
-          placeId: restaurant.placeId,
           reviews: [],
         });
         return;
@@ -160,7 +154,6 @@ export async function collectRestaurantReviews(
         console.log(`⚠️ 유효한 리뷰 텍스트 없음: ${restaurant.placeId}`);
         withoutReports.push({
           restaurantId: restaurant.id,
-          placeId: restaurant.placeId,
           reviews: [],
         });
         return;
@@ -168,7 +161,6 @@ export async function collectRestaurantReviews(
 
       withoutReports.push({
         restaurantId: restaurant.id,
-        placeId: restaurant.placeId,
         reviews: reviewTexts,
       });
     });
