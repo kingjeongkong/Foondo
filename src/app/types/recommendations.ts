@@ -46,7 +46,7 @@ export const recommendationRequestSchema = z.object({
     taste: z.number().min(0).max(3),
     atmosphere: z.number().min(0).max(3),
     price: z.number().min(0).max(3),
-    distance: z.number().min(0).max(3),
+    accessibility: z.number().min(0).max(3),
     service: z.number().min(0).max(3),
     quantity: z.number().min(0).max(3),
   }),

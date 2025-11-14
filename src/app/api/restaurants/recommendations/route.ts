@@ -1,5 +1,4 @@
-import { citySchema } from '@/app/types/city';
-import { foodSchema } from '@/app/types/food';
+import { recommendationRequestSchema } from '@/app/types/recommendations';
 import {
   analyzeAndSaveRestaurantReport,
   calculateRestaurantScores,
@@ -8,21 +7,6 @@ import {
 } from '@/lib/services/restaurantService';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-
-// 요청 데이터 검증 스키마
-// API 요청용 스키마 (클라이언트에서 받는 데이터 구조에 맞춤)
-const recommendationRequestSchema = z.object({
-  city: citySchema,
-  food: foodSchema,
-  priorities: z.object({
-    taste: z.number().min(0).max(3),
-    atmosphere: z.number().min(0).max(3),
-    price: z.number().min(0).max(3),
-    distance: z.number().min(0).max(3),
-    service: z.number().min(0).max(3),
-    quantity: z.number().min(0).max(3),
-  }),
-});
 
 /**
  * 음식점 추천 API
@@ -130,6 +114,7 @@ export async function POST(request: NextRequest) {
             atmosphereScore: item.report.atmosphereScore,
             serviceScore: item.report.serviceScore,
             quantityScore: item.report.quantityScore,
+            accessibilityScore: item.report.accessibilityScore,
             aiSummary: item.report.aiSummary,
           },
         })),

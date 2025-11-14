@@ -73,7 +73,7 @@ export function usePrioritySelection(initialItems: PriorityItem[]) {
       taste: 0,
       atmosphere: 0,
       price: 0,
-      distance: 0,
+      accessibility: 0,
       service: 0,
       quantity: 0,
     };
