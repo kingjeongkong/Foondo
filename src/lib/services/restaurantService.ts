@@ -124,11 +124,14 @@ export async function collectRestaurantReviews(
     const placeIds = restaurantsNeedingReviews.map((r) => r.placeId);
     const reviewsResults = await getMultipleRestaurantReviews(placeIds);
 
+    // 리뷰 결과 Map 생성 (빠른 조회용)
+    const reviewResultMap = new Map(
+      reviewsResults.map((result) => [result.placeId, result])
+    );
+
     // 리뷰 수집 결과 처리
     restaurantsNeedingReviews.forEach((restaurant) => {
-      const reviewResult = reviewsResults.find(
-        (r) => r.placeId === restaurant.placeId
-      );
+      const reviewResult = reviewResultMap.get(restaurant.placeId);
 
       // 리뷰 결과가 없거나 리뷰가 없으면 빈 배열
       if (
@@ -195,8 +198,10 @@ export async function analyzeAndSaveRestaurantReport(
     if (reviewData.reviews.length === 0) {
       // 리뷰 없음 → 기본 리포트 생성 (모든 점수 null)
       console.log(`📋 기본 리포트 생성: ${reviewData.restaurantId}`);
-      return await prisma.restaurantReport.create({
-        data: {
+      return await prisma.restaurantReport.upsert({
+        where: { restaurantId: reviewData.restaurantId },
+        update: {},
+        create: {
           restaurantId: reviewData.restaurantId,
         },
       });
@@ -234,10 +239,12 @@ export async function analyzeAndSaveRestaurantReport(
       error
     );
 
-    // 실패한 경우 기본 리포트 생성
+    // 실패한 경우 기본 리포트 생성 (upsert 사용하여 중복 생성 방지)
     try {
-      return await prisma.restaurantReport.create({
-        data: {
+      return await prisma.restaurantReport.upsert({
+        where: { restaurantId: reviewData.restaurantId },
+        update: {},
+        create: {
           restaurantId: reviewData.restaurantId,
         },
       });
@@ -286,10 +293,15 @@ export function calculateRestaurantScores(
     weights.service +
     weights.quantity;
 
-  // 2. 음식점과 리포트를 매핑하고 최종 점수 계산
+  // 2. 리포트 Map 생성 (빠른 조회용)
+  const reportMap = new Map(
+    reports.map((report) => [report.restaurantId, report])
+  );
+
+  // 3. 음식점과 리포트를 매핑하고 최종 점수 계산
   const restaurantScores = restaurants
     .map((restaurant) => {
-      const report = reports.find((r) => r.restaurantId === restaurant.id);
+      const report = reportMap.get(restaurant.id);
 
       // 리포트가 없으면 제외
       if (!report) {
