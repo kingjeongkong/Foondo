@@ -11,7 +11,7 @@ export interface PrioritySettings {
   taste: number;
   atmosphere: number;
   price: number;
-  distance: number;
+  accessibility: number;
   service: number;
   quantity: number;
 }

@@ -124,11 +124,14 @@ export async function collectRestaurantReviews(
     const placeIds = restaurantsNeedingReviews.map((r) => r.placeId);
     const reviewsResults = await getMultipleRestaurantReviews(placeIds);
 
+    // 리뷰 결과 Map 생성 (빠른 조회용)
+    const reviewResultMap = new Map(
+      reviewsResults.map((result) => [result.placeId, result])
+    );
+
     // 리뷰 수집 결과 처리
     restaurantsNeedingReviews.forEach((restaurant) => {
-      const reviewResult = reviewsResults.find(
-        (r) => r.placeId === restaurant.placeId
-      );
+      const reviewResult = reviewResultMap.get(restaurant.placeId);
 
       // 리뷰 결과가 없거나 리뷰가 없으면 빈 배열
       if (
@@ -195,8 +198,10 @@ export async function analyzeAndSaveRestaurantReport(
     if (reviewData.reviews.length === 0) {
       // 리뷰 없음 → 기본 리포트 생성 (모든 점수 null)
       console.log(`📋 기본 리포트 생성: ${reviewData.restaurantId}`);
-      return await prisma.restaurantReport.create({
-        data: {
+      return await prisma.restaurantReport.upsert({
+        where: { restaurantId: reviewData.restaurantId },
+        update: {},
+        create: {
           restaurantId: reviewData.restaurantId,
         },
       });
@@ -234,10 +239,12 @@ export async function analyzeAndSaveRestaurantReport(
       error
     );
 
-    // 실패한 경우 기본 리포트 생성
+    // 실패한 경우 기본 리포트 생성 (upsert 사용하여 중복 생성 방지)
     try {
-      return await prisma.restaurantReport.create({
-        data: {
+      return await prisma.restaurantReport.upsert({
+        where: { restaurantId: reviewData.restaurantId },
+        update: {},
+        create: {
           restaurantId: reviewData.restaurantId,
         },
       });
@@ -255,7 +262,7 @@ export async function analyzeAndSaveRestaurantReport(
  * 음식점들의 리포트를 기반으로 가중치를 적용하여 최종 점수를 계산하고 랭킹을 생성합니다.
  * @param restaurants 음식점 배열
  * @param reports 리포트 배열
- * @param priorities 사용자 우선순위 설정 (distance 제외)
+ * @param priorities 사용자 우선순위 설정
  * @returns 랭킹 정렬된 음식점 결과 배열
  */
 export function calculateRestaurantScores(
@@ -263,7 +270,7 @@ export function calculateRestaurantScores(
   reports: RestaurantReport[],
   priorities: PrioritySettings
 ): ScoredRestaurant[] {
-  // 1. 우선순위를 가중치로 변환 (distance 제외)
+  // 1. 우선순위를 가중치로 변환
   const weightMap: Record<number, number> = {
     3: 3.0, // 1순위
     2: 2.0, // 2순위
@@ -277,6 +284,7 @@ export function calculateRestaurantScores(
     atmosphere: weightMap[priorities.atmosphere],
     service: weightMap[priorities.service],
     quantity: weightMap[priorities.quantity],
+    accessibility: weightMap[priorities.accessibility],
   };
 
   const totalWeight =
@@ -284,12 +292,18 @@ export function calculateRestaurantScores(
     weights.price +
     weights.atmosphere +
     weights.service +
-    weights.quantity;
+    weights.quantity +
+    weights.accessibility;
 
-  // 2. 음식점과 리포트를 매핑하고 최종 점수 계산
+  // 2. 리포트 Map 생성 (빠른 조회용)
+  const reportMap = new Map(
+    reports.map((report) => [report.restaurantId, report])
+  );
+
+  // 3. 음식점과 리포트를 매핑하고 최종 점수 계산
   const restaurantScores = restaurants
     .map((restaurant) => {
-      const report = reports.find((r) => r.restaurantId === restaurant.id);
+      const report = reportMap.get(restaurant.id);
 
       // 리포트가 없으면 제외
       if (!report) {
@@ -302,7 +316,8 @@ export function calculateRestaurantScores(
         report.priceScore === null &&
         report.atmosphereScore === null &&
         report.serviceScore === null &&
-        report.quantityScore === null
+        report.quantityScore === null &&
+        report.accessibilityScore === null
       ) {
         return null;
       }
@@ -318,6 +333,7 @@ export function calculateRestaurantScores(
           report.atmosphereScore,
           report.serviceScore,
           report.quantityScore,
+          report.accessibilityScore,
         ].filter((score): score is number => score !== null);
 
         finalScore =
@@ -331,7 +347,8 @@ export function calculateRestaurantScores(
           (report.priceScore || 0) * weights.price +
           (report.atmosphereScore || 0) * weights.atmosphere +
           (report.serviceScore || 0) * weights.service +
-          (report.quantityScore || 0) * weights.quantity;
+          (report.quantityScore || 0) * weights.quantity +
+          (report.accessibilityScore || 0) * weights.accessibility;
 
         finalScore = weightedSum / totalWeight;
       }
