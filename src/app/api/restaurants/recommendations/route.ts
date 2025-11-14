@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     const restaurants = await searchAndSaveRestaurants(
       city.id, // DB 저장 시 외래키로 사용
       city.name, // Google Places 검색용
+      food.id, // 음식 ID (관계 저장용)
       food.name, // Google Places 검색용
       5 // 최대 5개 검색
     );

@@ -17,13 +17,15 @@ import { analyzeReviewsWithAI } from '@/lib/services/aiReviewService';
  * Google Places API로 음식점을 검색하고 DB에 저장합니다.
  * @param cityId 도시 ID (Mapbox ID)
  * @param cityName 도시명
+ * @param foodId 음식 ID
  * @param foodName 음식명
- * @param maxResults 최대 검색 결과 수 (기본값: 20)
+ * @param maxResults 최대 검색 결과 수
  * @returns 저장된 레스토랑 배열
  */
 export async function searchAndSaveRestaurants(
   cityId: string,
   cityName: string,
+  foodId: string,
   foodName: string,
   maxResults: number = 5
 ) {
@@ -43,26 +45,67 @@ export async function searchAndSaveRestaurants(
 
   console.log(`✅ ${restaurants.length}개 음식점 검색 완료`);
 
-  // 2. DB에 저장 (upsert - placeId 기준으로 중복 방지)
-  const savedRestaurants = await prisma.$transaction(
-    restaurants.map((restaurant) =>
-      prisma.restaurant.upsert({
-        where: { placeId: restaurant.placeId },
-        update: {}, // 추후 updated_at를 기준으로 업데이트 로직 추가
-        create: {
-          placeId: restaurant.placeId,
-          name: restaurant.name,
-          address: restaurant.address,
-          photoUrl: restaurant.photoReference
-            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${restaurant.photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
-            : null,
-          cityId: cityId,
-        },
-      })
-    )
-  );
+  // 2. DB에 음식점 저장 및 음식점-음식 관계 저장
+  // 각 음식점과 그 관계를 하나의 트랜잭션으로 처리하되, 일부 실패 허용
+  const savePromises = restaurants.map(async (restaurant) => {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        // 2-1. 음식점 저장 (upsert - placeId 기준으로 중복 방지)
+        const saved = await tx.restaurant.upsert({
+          where: { placeId: restaurant.placeId },
+          update: {}, // 추후 updated_at를 기준으로 업데이트 로직 추가
+          create: {
+            placeId: restaurant.placeId,
+            name: restaurant.name,
+            address: restaurant.address,
+            photoUrl: restaurant.photoReference
+              ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${restaurant.photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+              : null,
+            cityId: cityId,
+          },
+        });
 
-  console.log(`💾 ${savedRestaurants.length}개 음식점 DB 저장 완료`);
+        // 2-2. 음식점-음식 관계 저장 (음식점 저장 후, 같은 트랜잭션)
+        await tx.restaurantFood.upsert({
+          where: {
+            restaurantId_foodId: {
+              restaurantId: saved.id,
+              foodId: foodId,
+            },
+          },
+          update: {}, // 이미 관계가 있으면 업데이트 없음
+          create: {
+            restaurantId: saved.id,
+            foodId: foodId,
+          },
+        });
+
+        return saved;
+      });
+    } catch (error) {
+      // 일부 실패 허용: 에러 로그만 남기고 null 반환
+      console.error(
+        `❌ 음식점 저장 실패 (placeId: ${restaurant.placeId}):`,
+        error
+      );
+      return null;
+    }
+  });
+
+  // 모든 Promise 실행 (일부 실패 허용)
+  const results = await Promise.allSettled(savePromises);
+
+  // 성공한 음식점만 필터링
+  const savedRestaurants = results
+    .filter((result) => result.status === 'fulfilled' && result.value !== null)
+    .map((result) => (result as PromiseFulfilledResult<Restaurant>).value);
+
+  const successCount = savedRestaurants.length;
+  const failureCount = restaurants.length - successCount;
+
+  console.log(
+    `💾 ${successCount}/${restaurants.length}개 음식점 및 관계 저장 완료${failureCount > 0 ? ` (${failureCount}개 실패)` : ''}`
+  );
 
   return savedRestaurants;
 }
