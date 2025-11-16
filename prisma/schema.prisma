@@ -36,6 +36,7 @@ model Food {
   category    String
 
   city City           @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  restaurants RestaurantFood[]
 
   @@map("foods")
 }
@@ -52,6 +53,7 @@ model Restaurant {
 
   city   City?       @relation(fields: [cityId], references: [id], onDelete: SetNull)
   report RestaurantReport?
+  foods  RestaurantFood[]
 
   @@map("restaurants")
 }
@@ -72,4 +74,20 @@ model RestaurantReport {
   restaurant Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@map("restaurant_reports")
+}
+
+// 5. restaurant_foods 테이블 모델 (Many-to-Many 조인 테이블)
+model RestaurantFood {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+  restaurantId String   @map("restaurant_id") @db.Uuid
+  foodId       String   @map("food_id") @db.Uuid
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  food       Food       @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, foodId])
+  @@index([restaurantId])
+  @@index([foodId])
+  @@map("restaurant_foods")
 }

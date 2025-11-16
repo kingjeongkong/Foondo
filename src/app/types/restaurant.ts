@@ -8,11 +8,6 @@ export interface ReviewData {
   reviews: string[];
 }
 
-export interface ReviewCollectionResult {
-  withReports: RestaurantReport[];
-  withoutReports: ReviewData[];
-}
-
 export interface ScoredRestaurant {
   restaurant: Restaurant;
   report: RestaurantReport;
