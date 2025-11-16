@@ -143,8 +143,9 @@ export async function getExistingRestaurantsByFood(foodId: string) {
  * 여러 음식점의 리뷰를 수집합니다.
  * 이 함수는 완전한 리포트가 없는 음식점들에 대해서만 호출됩니다.
  * DB 조회 없이 바로 Google Places API로 리뷰를 수집합니다.
+ * 리뷰가 없는 경우에도 빈 배열로 반환하여 기본 리포트 생성을 보장합니다.
  * @param restaurants 리뷰 수집이 필요한 음식점 배열 (완전한 리포트가 없는 것이 확실한 경우)
- * @returns 리뷰 데이터 배열
+ * @returns 리뷰 데이터 배열 (리뷰가 없는 경우 빈 배열 포함)
  */
 export async function collectRestaurantReviews(
   restaurants: Pick<Restaurant, 'id' | 'placeId'>[]
@@ -169,13 +170,19 @@ export async function collectRestaurantReviews(
   restaurants.forEach((restaurant) => {
     const reviewResult = reviewResultMap.get(restaurant.placeId);
 
-    // 리뷰 결과가 없거나 리뷰가 없으면 스킵 (반환하지 않음)
+    // 리뷰 결과가 없거나 리뷰가 없으면 빈 배열로 반환 (기본 리포트 생성 보장)
     if (
       !reviewResult ||
       !reviewResult.reviews ||
       reviewResult.reviews.length === 0
     ) {
-      console.log(`⚠️ 리뷰 없음: ${restaurant.placeId} (스킵)`);
+      console.log(
+        `⚠️ 리뷰 없음: ${restaurant.placeId} (기본 리포트 생성 예정)`
+      );
+      reviewDataList.push({
+        restaurantId: restaurant.id,
+        reviews: [], // 빈 배열로 반환하여 기본 리포트 생성 보장
+      });
       return;
     }
 
@@ -184,22 +191,31 @@ export async function collectRestaurantReviews(
       .map((review) => review.text)
       .filter(Boolean);
 
-    // 유효한 텍스트가 없으면 스킵 (반환하지 않음)
+    // 유효한 텍스트가 없으면 빈 배열로 반환 (기본 리포트 생성 보장)
     if (reviewTexts.length === 0) {
-      console.log(`⚠️ 유효한 리뷰 텍스트 없음: ${restaurant.placeId} (스킵)`);
+      console.log(
+        `⚠️ 유효한 리뷰 텍스트 없음: ${restaurant.placeId} (기본 리포트 생성 예정)`
+      );
+      reviewDataList.push({
+        restaurantId: restaurant.id,
+        reviews: [], // 빈 배열로 반환하여 기본 리포트 생성 보장
+      });
       return;
     }
 
-    // 리뷰가 있는 경우만 추가
+    // 리뷰가 있는 경우
     reviewDataList.push({
       restaurantId: restaurant.id,
       reviews: reviewTexts,
     });
   });
 
-  const skippedCount = restaurants.length - reviewDataList.length;
+  const withReviewsCount = reviewDataList.filter(
+    (r) => r.reviews.length > 0
+  ).length;
+  const withoutReviewsCount = reviewDataList.length - withReviewsCount;
   console.log(
-    `✅ 단계 2 완료: ${reviewDataList.length}개 음식점 리뷰 수집됨${skippedCount > 0 ? ` (${skippedCount}개 스킵)` : ''}`
+    `✅ 단계 2 완료: ${reviewDataList.length}개 음식점 처리됨 (${withReviewsCount}개 리뷰 있음, ${withoutReviewsCount}개 리뷰 없음 - 기본 리포트 생성 예정)`
   );
 
   return reviewDataList;

@@ -72,17 +72,16 @@ export async function POST(request: NextRequest) {
 
     // 단계 2: 리뷰 수집
     // 새로운 음식점만 리뷰 수집 (기존 음식점은 이미 리포트가 있음)
+    // 리뷰가 없는 경우에도 빈 배열로 반환하여 기본 리포트 생성 보장
     console.log(`📝 단계 2 실행: 리뷰 수집`);
     const reviewDataList = await collectRestaurantReviews(newRestaurants);
-    console.log(
-      `✅ 단계 2 완료: ${reviewDataList.length}개 음식점 리뷰 수집 완료`
-    );
+    console.log(`✅ 단계 2 완료: ${reviewDataList.length}개 음식점 처리됨`);
 
     // 단계 3: AI 분석 + 리포트 저장
     console.log(`📝 단계 3 실행: AI 분석 및 리포트 저장`);
 
-    // 리뷰가 있는 음식점만 AI 분석 처리 (일부 실패 허용)
-    // 에러 처리는 analyzeAndSaveRestaurantReport 내부에서 처리
+    // 모든 음식점에 대해 리포트 생성 (리뷰가 있으면 AI 분석, 없으면 기본 리포트)
+    // 일부 실패 허용, 에러 처리는 analyzeAndSaveRestaurantReport 내부에서 처리
     const reportPromises = reviewDataList.map((reviewData: ReviewData) =>
       analyzeAndSaveRestaurantReport(reviewData)
     );
