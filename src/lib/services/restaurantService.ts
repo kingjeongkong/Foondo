@@ -46,58 +46,59 @@ export async function searchAndSaveRestaurants(
 
   // 2. DB에 음식점 저장 및 음식점-음식 관계 저장
   // 각 음식점과 그 관계를 하나의 트랜잭션으로 처리하되, 일부 실패 허용
-  const savePromises = restaurants.map(async (restaurant) => {
-    try {
-      return await prisma.$transaction(async (tx) => {
-        // 2-1. 음식점 저장 (upsert - placeId 기준으로 중복 방지)
-        const saved = await tx.restaurant.upsert({
-          where: { placeId: restaurant.placeId },
-          update: {}, // 추후 updated_at를 기준으로 업데이트 로직 추가
-          create: {
-            placeId: restaurant.placeId,
-            name: restaurant.name,
-            address: restaurant.address,
-            photoUrl: restaurant.photoReference
-              ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${restaurant.photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
-              : null,
-            cityId: cityId,
-          },
-        });
+  // Supabase 무료 티어의 동시 트랜잭션 제한을 피하기 위해 순차 처리
+  const savedRestaurants: Restaurant[] = [];
 
-        // 2-2. 음식점-음식 관계 저장 (음식점 저장 후, 같은 트랜잭션)
-        await tx.restaurantFood.upsert({
-          where: {
-            restaurantId_foodId: {
+  for (const restaurant of restaurants) {
+    try {
+      const saved = await prisma.$transaction(
+        async (tx) => {
+          // 2-1. 음식점 저장 (upsert - placeId 기준으로 중복 방지)
+          const saved = await tx.restaurant.upsert({
+            where: { placeId: restaurant.placeId },
+            update: {}, // 추후 updated_at를 기준으로 업데이트 로직 추가
+            create: {
+              placeId: restaurant.placeId,
+              name: restaurant.name,
+              address: restaurant.address,
+              photoUrl: restaurant.photoReference
+                ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${restaurant.photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+                : null,
+              cityId: cityId,
+            },
+          });
+
+          // 2-2. 음식점-음식 관계 저장 (음식점 저장 후, 같은 트랜잭션)
+          await tx.restaurantFood.upsert({
+            where: {
+              restaurantId_foodId: {
+                restaurantId: saved.id,
+                foodId: foodId,
+              },
+            },
+            update: {}, // 이미 관계가 있으면 업데이트 없음
+            create: {
               restaurantId: saved.id,
               foodId: foodId,
             },
-          },
-          update: {}, // 이미 관계가 있으면 업데이트 없음
-          create: {
-            restaurantId: saved.id,
-            foodId: foodId,
-          },
-        });
+          });
 
-        return saved;
-      });
+          return saved;
+        },
+        {
+          timeout: 10000, // 10초 타임아웃 설정
+        }
+      );
+
+      savedRestaurants.push(saved);
     } catch (error) {
-      // 일부 실패 허용: 에러 로그만 남기고 null 반환
+      // 일부 실패 허용: 에러 로그만 남기고 계속 진행
       console.error(
         `❌ 음식점 저장 실패 (placeId: ${restaurant.placeId}):`,
         error
       );
-      return null;
     }
-  });
-
-  // 모든 Promise 실행 (일부 실패 허용)
-  const results = await Promise.allSettled(savePromises);
-
-  // 성공한 음식점만 필터링
-  const savedRestaurants = results
-    .filter((result) => result.status === 'fulfilled' && result.value !== null)
-    .map((result) => (result as PromiseFulfilledResult<Restaurant>).value);
+  }
 
   const successCount = savedRestaurants.length;
   const failureCount = restaurants.length - successCount;
