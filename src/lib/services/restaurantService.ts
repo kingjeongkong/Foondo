@@ -111,6 +111,36 @@ export async function searchAndSaveRestaurants(
 }
 
 /**
+ * DB에서 특정 음식과 연결된 기존 음식점들을 조회합니다.
+ * 리포트가 있는 음식점만 반환합니다.
+ * @param foodId 음식 ID
+ * @returns 리포트가 있는 음식점 배열 (report 포함)
+ */
+export async function getExistingRestaurantsByFood(foodId: string) {
+  console.log(`🔍 기존 음식점 조회 시작: foodId=${foodId}`);
+
+  const restaurants = await prisma.restaurant.findMany({
+    where: {
+      foods: {
+        some: {
+          foodId: foodId,
+        },
+      },
+      report: {
+        tasteScore: { not: null },
+      },
+    },
+    include: {
+      report: true,
+    },
+  });
+
+  console.log(`✅ 기존 음식점 조회 완료: ${restaurants.length}개`);
+
+  return restaurants;
+}
+
+/**
  * 여러 음식점의 리뷰를 수집합니다.
  * - 리포트가 이미 있는 음식점은 리뷰 수집을 스킵하고 리포트 데이터를 반환합니다.
  * - 리포트가 없는 음식점만 Google Places API로 리뷰를 수집합니다.
