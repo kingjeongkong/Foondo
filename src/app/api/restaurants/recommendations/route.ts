@@ -1,10 +1,13 @@
 import { recommendationRequestSchema } from '@/app/types/recommendations';
+import { ReviewData } from '@/app/types/restaurant';
 import {
   analyzeAndSaveRestaurantReport,
   calculateRestaurantScores,
   collectRestaurantReviews,
+  getExistingRestaurantsByFood,
   searchAndSaveRestaurants,
 } from '@/lib/services/restaurantService';
+import { Restaurant, RestaurantReport } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -33,29 +36,54 @@ export async function POST(request: NextRequest) {
     // 단계 1: 음식점 검색 + DB 저장
     // cityId는 DB 저장 시 외래키로 사용, city.name, food.name은 검색 쿼리용
     console.log(`📝 단계 1 실행: 음식점 검색 및 DB 저장`);
-    const restaurants = await searchAndSaveRestaurants(
+    const searchedRestaurants = await searchAndSaveRestaurants(
       city.id, // DB 저장 시 외래키로 사용
       city.name, // Google Places 검색용
       food.id, // 음식 ID (관계 저장용)
       food.name, // Google Places 검색용
       5 // 최대 5개 검색
     );
-    console.log(`✅ 단계 1 완료: ${restaurants.length}개 음식점 저장됨`);
-
-    // 단계 2: 리뷰 수집 (리포트 캐싱 포함)
-    console.log(`📝 단계 2 실행: 리뷰 수집`);
-    const { withReports, withoutReports } =
-      await collectRestaurantReviews(restaurants);
     console.log(
-      `✅ 단계 2 완료: ${withReports.length}개 캐시됨, ${withoutReports.length}개 리뷰 수집 완료`
+      `✅ 단계 1 완료: ${searchedRestaurants.length}개 음식점 저장됨`
     );
 
-    // 단계 3: AI 분석 + 리포트 저장 (리포트가 없는 음식점만)
+    // 단계 1.5: DB에서 해당 음식과 연결된 기존 음식점 조회
+    console.log(`📝 단계 1.5 실행: 기존 음식점 조회`);
+    const existingRestaurants = await getExistingRestaurantsByFood(food.id);
+    console.log(
+      `✅ 단계 1.5 완료: ${existingRestaurants.length}개 기존 음식점 조회됨`
+    );
+
+    // 새로 검색한 음식점에서 기존 음식점과 겹치는 것 제외
+    // existingRestaurants는 이미 완전한 리포트가 있는 것이 확실하므로,
+    // newRestaurants에서 겹치는 것은 리뷰 수집/분석이 불필요함
+    const existingRestaurantIds = new Set(existingRestaurants.map((r) => r.id));
+    const newRestaurants = searchedRestaurants.filter(
+      (r) => !existingRestaurantIds.has(r.id)
+    );
+
+    const allRestaurants = [
+      ...existingRestaurants,
+      ...newRestaurants,
+    ] as Restaurant[];
+    console.log(
+      `📊 총 ${allRestaurants.length}개 음식점 (신규: ${newRestaurants.length}, 기존: ${existingRestaurants.length})`
+    );
+
+    // 단계 2: 리뷰 수집
+    // 새로운 음식점만 리뷰 수집 (기존 음식점은 이미 리포트가 있음)
+    console.log(`📝 단계 2 실행: 리뷰 수집`);
+    const reviewDataList = await collectRestaurantReviews(newRestaurants);
+    console.log(
+      `✅ 단계 2 완료: ${reviewDataList.length}개 음식점 리뷰 수집 완료`
+    );
+
+    // 단계 3: AI 분석 + 리포트 저장
     console.log(`📝 단계 3 실행: AI 분석 및 리포트 저장`);
 
-    // 리포트가 없는 음식점만 AI 분석 처리 (일부 실패 허용)
+    // 리뷰가 있는 음식점만 AI 분석 처리 (일부 실패 허용)
     // 에러 처리는 analyzeAndSaveRestaurantReport 내부에서 처리
-    const reportPromises = withoutReports.map((reviewData) =>
+    const reportPromises = reviewDataList.map((reviewData: ReviewData) =>
       analyzeAndSaveRestaurantReport(reviewData)
     );
 
@@ -63,11 +91,12 @@ export async function POST(request: NextRequest) {
     const reportResults = await Promise.allSettled(reportPromises);
 
     const successfulReports = reportResults.filter(
-      (result) => result.status === 'fulfilled'
+      (result: PromiseSettledResult<RestaurantReport>) =>
+        result.status === 'fulfilled'
     ).length;
 
     console.log(
-      `✅ 단계 3 완료: ${successfulReports}/${withoutReports.length}개 리포트 저장 완료`
+      `✅ 단계 3 완료: ${successfulReports}/${reviewDataList.length}개 리포트 저장 완료`
     );
 
     // 단계 4: 점수 계산 및 랭킹
@@ -75,18 +104,28 @@ export async function POST(request: NextRequest) {
 
     // 1. 새로 생성된 리포트 추출
     const newReports = reportResults
-      .filter((result) => result.status === 'fulfilled')
+      .filter(
+        (result: PromiseSettledResult<RestaurantReport>) =>
+          result.status === 'fulfilled'
+      )
       .map(
-        (result) =>
-          (result as PromiseFulfilledResult<typeof result.value>).value
+        (result) => (result as PromiseFulfilledResult<RestaurantReport>).value
       );
 
     // 2. 모든 리포트 합치기
-    const allReports = [...withReports, ...newReports];
+    // 새로 생성된 리포트 + 기존 음식점의 리포트
+    const existingRestaurantReports = existingRestaurants
+      .map((r) => r.report)
+      .filter(
+        (report): report is NonNullable<typeof report> => report !== null
+      );
+
+    const allReports = [...newReports, ...existingRestaurantReports];
 
     // 4. 점수 계산 및 랭킹
+    // 모든 음식점(신규 + 기존)에 대해 랭킹
     const restaurantScores = calculateRestaurantScores(
-      restaurants,
+      allRestaurants,
       allReports,
       priorities
     );
