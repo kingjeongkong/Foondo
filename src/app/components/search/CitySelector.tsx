@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 import LocationAutocomplete from './LocationAutocomplete';
 
 export interface CitySelectorProps {
@@ -76,9 +77,11 @@ export function CitySelector({
               disabled={disabled || isLoading}
             >
               {isLoading ? (
-                <span className="animate-spin">⏳</span>
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </span>
               ) : (
-                `Get Recommendations of ${selectedCity.name}&apos;s food`
+                `Get Recommendations of ${selectedCity.name}'s food`
               )}
             </Button>
           </div>
