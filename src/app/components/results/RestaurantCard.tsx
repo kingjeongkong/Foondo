@@ -47,10 +47,10 @@ export function RestaurantCard({
 
   return (
     <Card className="restaurant-card w-full hover:shadow-lg transition-all duration-300">
-      <CardContent className="relative p-4 md:p-6">
+      <CardContent className="relative p-4 md:p-6 md:pr-32">
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-          {/* 왼쪽: 랭킹 배지 + 사진 */}
-          <div className="flex items-start gap-3 md:gap-4">
+          {/* 왼쪽: 랭킹 배지 + 사진 + 모바일 점수 */}
+          <div className="flex w-full md:w-auto items-start gap-3 md:gap-4">
             {/* 랭킹 배지 */}
             <div
               className={`shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center font-bold text-lg md:text-xl ${getRankBadgeStyle(
@@ -60,30 +60,43 @@ export function RestaurantCard({
               {rank}
             </div>
 
-            {/* 사진 */}
-            <div className="shrink-0">
-              {restaurant.photoUrl && !imageError ? (
-                <Image
-                  src={restaurant.photoUrl}
-                  alt={restaurant.name || 'Restaurant'}
-                  className="w-24 h-24 md:w-28 md:h-28 rounded-xl object-cover"
-                  width={96}
-                  height={96}
-                  onError={() => setImageError(true)}
-                />
-              ) : (
-                <div className="w-24 h-24 md:w-28 md:h-28 rounded-xl bg-gray-200 flex items-center justify-center text-4xl">
-                  🍽️
+            <div className="flex w-full md:w-auto items-start gap-3">
+              {/* 사진 */}
+              <div className="shrink-0">
+                {restaurant.photoUrl && !imageError ? (
+                  <Image
+                    src={restaurant.photoUrl}
+                    alt={restaurant.name || 'Restaurant'}
+                    className="w-24 h-24 md:w-28 md:h-28 rounded-xl object-cover"
+                    width={96}
+                    height={96}
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className="w-24 h-24 md:w-28 md:h-28 rounded-xl bg-gray-200 flex items-center justify-center text-4xl">
+                    🍽️
+                  </div>
+                )}
+              </div>
+
+              {/* 모바일: 사진 오른쪽 빈 공간 상단 점수 */}
+              <div className="flex-1 md:hidden flex justify-end">
+                <div
+                  className={`inline-flex items-center gap-1 px-2 py-1 text-lg font-semibold ${getScoreColor(
+                    finalScore
+                  )}`}
+                >
+                  ⭐ {finalScore.toFixed(1)}
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
           {/* 중앙: 음식점 정보 */}
-          <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex-1 min-w-0 space-y-3">
             {/* 음식점 이름 */}
-            <h3 className="restaurant-name text-lg md:text-xl font-semibold text-gray-900 truncate">
-              {restaurant.name || 'Unnamed Restaurant'}
+            <h3 className="restaurant-name text-lg md:text-xl font-semibold text-gray-900 wrap-break-word leading-tight">
+              {restaurant.name || ''}
             </h3>
 
             {/* 주소 */}
@@ -103,8 +116,8 @@ export function RestaurantCard({
             )}
           </div>
 
-          {/* 오른쪽 상단: 최종 점수 */}
-          <div className="absolute top-4 right-4">
+          {/* 데스크톱: 카드 우측 상단 점수 */}
+          <div className="hidden md:block absolute top-4 right-4">
             <div
               className={`text-2xl md:text-3xl font-bold ${getScoreColor(
                 finalScore
