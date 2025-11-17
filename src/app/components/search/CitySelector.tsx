@@ -3,7 +3,6 @@
 import type { City } from '@/app/types/city';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
 import LocationAutocomplete from './LocationAutocomplete';
 
 export interface CitySelectorProps {
@@ -47,7 +46,7 @@ export function CitySelector({
   };
 
   return (
-    <Card className="restaurant-card w-full max-w-2xl border border-white/40">
+    <Card className="restaurant-card w-full max-w-3xl border border-white/40">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -99,7 +98,7 @@ export function CitySelector({
         >
           {isLoading ? (
             <span className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <div className="ai-loader w-4 h-4" />
             </span>
           ) : selectedCity ? (
             `Continue with ${selectedCity.name}`

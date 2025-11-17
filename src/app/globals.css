@@ -162,7 +162,7 @@
   }
 
   .progress-panel {
-    @apply w-full md:w-64 lg:w-72 rounded-3xl p-6;
+    @apply w-full md:w-64 lg:w-80 rounded-3xl p-6;
     background: var(--color-surface);
     box-shadow: var(--shadow-card);
     border: 1px solid color-mix(in oklch, var(--color-body) 8%, transparent);

@@ -217,8 +217,8 @@ export default function Home() {
       </header>
 
       <div className="container mx-auto px-4 py-8 lg:py-12">
-        <div className="flex flex-col gap-6 lg:flex-row">
-          <aside className="progress-panel space-y-5">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          <aside className="progress-panel space-y-5 shrink-0">
             <div>
               <p className="text-sm text-gray-500">Progress</p>
               <p className="text-xl font-semibold text-gray-900">
@@ -289,22 +289,8 @@ export default function Home() {
             </div>
           </aside>
 
-          <main className="flex-1 space-y-8">
-            <div
-              className="rounded-3xl border border-transparent p-8 shadow-[0_12px_30px_rgba(15,23,42,0.08)]"
-              style={{
-                background:
-                  'linear-gradient(120deg, rgba(255,255,255,0.95), color-mix(in oklch, var(--color-primary-100) 60%, white), rgba(255,255,255,0.9))',
-              }}
-            >
-              <h1 className="taste-title mb-3">AI Restaurant Recommendation</h1>
-              <p className="taste-description max-w-2xl text-gray-600">
-                Discover data-backed dining spots by moving through four guided
-                steps. Foondo AI analyzes city context, food preferences, and
-                your personal priorities to deliver precise restaurant hits.
-              </p>
-            </div>
-            <div className="flex justify-center">{renderStepCard()}</div>
+          <main className="flex-1 min-w-0">
+            <div className="flex justify-start w-full">{renderStepCard()}</div>
           </main>
         </div>
       </div>
