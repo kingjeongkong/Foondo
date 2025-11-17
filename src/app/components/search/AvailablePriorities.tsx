@@ -22,8 +22,8 @@ export function AvailablePriorities({
 }: AvailablePrioritiesProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Choose Your Priorities
+      <h3 className="text-base font-semibold text-gray-900">
+        Available options
       </h3>
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {items.map((item) => (
@@ -38,7 +38,7 @@ export function AvailablePriorities({
 
       {items.length > 0 && (
         <div className="text-xs text-gray-500 text-center mt-2">
-          💡 Tap to select
+          Tap to select
         </div>
       )}
     </div>

@@ -37,34 +37,61 @@
 
   /*
    * =============================================
-   * 2. 맛집 앱 전용 디자인 시스템 (★ 핵심!)
+   * 2. 서비스 특화 SaaS 디자인 시스템 (★ 핵심!)
    * =============================================
    */
+  /* 브랜드 색상: 지능적인 차가움 + 음식의 따뜻함 */
+  --color-shell: oklch(0.98 0.01 250); /* 차분한 배경 */
+  --color-surface: oklch(0.995 0 0); /* 카드 표면 */
+  --color-surface-muted: oklch(0.964 0.01 250); /* 보조 카드 */
+  --color-primary-600: oklch(0.59 0.13 258); /* 전통적인 SaaS 블루 */
+  --color-primary-500: oklch(0.65 0.12 258);
+  --color-primary-100: oklch(0.9 0.04 258);
+  --color-secondary-600: oklch(0.45 0.07 250);
+  --color-secondary-100: oklch(0.94 0.02 250);
+  --color-success: oklch(0.73 0.14 150);
+  --color-warning: oklch(0.8 0.14 80);
+  --color-info: oklch(0.82 0.08 230);
+  --color-body: oklch(0.3 0.02 250);
+  --color-muted-text: oklch(0.55 0.02 250);
+
   /* 맛의 온도감 색상 */
   --color-warm-taste: oklch(75.5% 0.17 65.2); /* #f59e0b - 따뜻한 맛 */
   --color-fresh-taste: oklch(65.8% 0.18 159.9); /* #10b981 - 신선한 맛 */
   --color-rich-taste: oklch(51.3% 0.22 17.5); /* #dc2626 - 진한 맛 */
   --color-sweet-taste: oklch(66.5% 0.2 350.2); /* #ec4899 - 달콤한 맛 */
 
-  /* Apple의 세련됨 + 맛집의 따뜻함 */
-  --color-neutral-warm: oklch(98.8% 0.005 250); /* #f8fafc - 따뜻한 중성색 */
-  --color-accent-food: var(--color-warm-taste); /* 음식 포인트 컬러 */
-  --color-ai-purple: oklch(61.8% 0.19 285.4); /* #8b5cf6 - AI 추천 컬러 */
+  /* AI 시그니처 */
+  --color-ai-purple: oklch(61.8% 0.19 285.4); /* #8b5cf6 */
+  --color-ai-gradient-start: oklch(0.7 0.13 300);
+  --color-ai-gradient-end: oklch(0.62 0.12 260);
 
-  /* 맛집 앱 전용 색상 */
-  --color-restaurant-bg: oklch(99.6% 0.002 250);
-  --color-restaurant-card: oklch(1 0 0);
-  --color-restaurant-border: oklch(90.2% 0.01 250);
-  --color-restaurant-text: oklch(20.4% 0.01 250);
-  --color-restaurant-muted: oklch(45.1% 0.01 250);
+  /* 타이포그래피 */
+  --font-family-heading:
+    'Satoshi', 'Pretendard Variable', 'SF Pro Display', system-ui, sans-serif;
+  --font-family-body:
+    'Inter', 'Pretendard Variable', 'SF Pro Text', system-ui, sans-serif;
+  --font-size-display: clamp(2rem, 2.5vw, 2.75rem);
+  --font-size-title: clamp(1.5rem, 2vw, 2rem);
+  --font-size-subtitle: clamp(1.125rem, 1.5vw, 1.375rem);
+  --font-size-body: 1rem;
+  --font-size-caption: 0.875rem;
 
-  /* 간격 시스템 (8px 그리드) */
+  /* 간격 시스템 (8px 그리드 기반 확장) */
   --spacing-1: 0.25rem; /* 4px */
   --spacing-2: 0.5rem; /* 8px */
+  --spacing-3: 0.75rem; /* 12px */
   --spacing-4: 1rem; /* 16px */
+  --spacing-5: 1.25rem; /* 20px */
   --spacing-6: 1.5rem; /* 24px */
   --spacing-8: 2rem; /* 32px */
+  --spacing-10: 2.5rem; /* 40px */
   --spacing-12: 3rem; /* 48px */
+
+  /* 그림자 */
+  --shadow-card: 0 12px 35px rgba(15, 23, 42, 0.08);
+  --shadow-hover: 0 18px 45px rgba(15, 23, 42, 0.12);
+  --shadow-shell: 0 6px 24px rgba(15, 23, 42, 0.08);
 }
 
 /* 다크 모드 색상 정의 - @theme 밖에서 독립적으로 관리 */
@@ -108,28 +135,90 @@
 
 /* 맛집 앱 전용 유틸리티 클래스 */
 @layer components {
-  /* 맛집 카드 스타일 */
+  /* SaaS 앱 쉘 */
+  .app-shell {
+    @apply min-h-screen;
+    background:
+      radial-gradient(
+        circle at top right,
+        var(--color-primary-100),
+        transparent 55%
+      ),
+      linear-gradient(135deg, var(--color-shell), #fefefe);
+  }
+
+  .app-header {
+    @apply w-full flex items-center justify-between px-6 py-4;
+    box-shadow: var(--shadow-shell);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid
+      color-mix(in oklch, var(--color-body) 6%, transparent);
+  }
+
+  .app-brand {
+    @apply text-lg font-semibold text-gray-900;
+    font-family: var(--font-family-heading);
+  }
+
+  .progress-panel {
+    @apply w-full md:w-64 lg:w-80 rounded-3xl p-6;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    border: 1px solid color-mix(in oklch, var(--color-body) 8%, transparent);
+  }
+
+  .progress-pill {
+    @apply flex items-center gap-3 rounded-full px-4 py-2 text-sm;
+    background: var(--color-secondary-100);
+    color: var(--color-muted-text);
+  }
+
+  .progress-pill-active {
+    background: color-mix(in oklch, var(--color-primary-100) 80%, white);
+    color: var(--color-primary-600);
+    border: 1px solid var(--color-primary-100);
+  }
+
+  /* 카드 스타일 */
   .restaurant-card {
-    @apply rounded-2xl shadow-sm border-0 bg-gradient-to-br from-neutral-warm to-white;
-    @apply hover:shadow-md transition-all duration-300;
+    @apply rounded-3xl border border-transparent;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    transition:
+      box-shadow 250ms ease,
+      transform 250ms ease;
+  }
+
+  .restaurant-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
   }
 
   /* 따뜻한 맛집 스타일 */
   .warm-restaurant {
-    @apply bg-gradient-to-r from-warm-taste/5 to-orange-100;
-    @apply border-l-4 border-warm-taste;
+    @apply border-l-4;
+    border-color: var(--color-warm-taste);
+    background: color-mix(in oklch, var(--color-warm-taste) 8%, white);
   }
 
   /* 신선한 맛집 스타일 */
   .fresh-restaurant {
-    @apply bg-gradient-to-r from-fresh-taste/5 to-green-100;
-    @apply border-l-4 border-fresh-taste;
+    @apply border-l-4;
+    border-color: var(--color-fresh-taste);
+    background: color-mix(in oklch, var(--color-fresh-taste) 8%, white);
   }
 
   /* AI 추천 스타일 */
   .ai-recommendation {
-    @apply bg-gradient-to-r from-ai-purple/10 to-blue-50;
-    @apply border border-ai-purple/20 rounded-2xl;
+    @apply rounded-2xl;
+    background: linear-gradient(
+      120deg,
+      var(--color-ai-gradient-start),
+      var(--color-ai-gradient-end)
+    );
+    color: white;
+    box-shadow: 0 12px 30px rgba(139, 92, 246, 0.35);
   }
 
   /* 맛집 선택 인터랙션 */
@@ -141,50 +230,63 @@
 
   /* 맛집 타이포그래피 - 반응형 */
   .taste-title {
-    @apply text-2xl md:text-3xl font-bold text-gray-900;
-    font-family: 'SF Pro Display', system-ui, sans-serif;
+    @apply font-bold text-gray-900;
+    font-size: var(--font-size-title);
+    font-family: var(--font-family-heading);
   }
 
   .restaurant-name {
-    @apply text-lg md:text-xl font-semibold text-gray-900;
-    font-family: 'SF Pro Text', system-ui, sans-serif;
+    @apply font-semibold text-gray-900;
+    font-size: clamp(1.125rem, 1.5vw, 1.5rem);
+    font-family: var(--font-family-heading);
   }
 
   .taste-description {
-    @apply text-sm md:text-base leading-relaxed text-gray-600;
-    font-family: 'SF Pro Text', system-ui, sans-serif;
+    @apply leading-relaxed text-gray-600;
+    font-size: var(--font-size-body);
+    font-family: var(--font-family-body);
   }
 
   /* 음식 카드 스타일 */
   .food-card {
-    @apply rounded-2xl border-2 border-gray-200;
-    @apply hover:border-warm-taste hover:shadow-md;
-    @apply transition-all duration-200;
+    @apply rounded-2xl border border-gray-200;
     @apply cursor-pointer;
+    background: var(--color-surface-muted);
+    transition:
+      border-color 200ms ease,
+      box-shadow 200ms ease,
+      transform 200ms ease;
   }
 
   .food-card:hover {
     @apply transform scale-[1.02];
+    border-color: var(--color-primary-100);
+    box-shadow: var(--shadow-card);
   }
 
   .common-food {
-    @apply border-blue-200 hover:border-blue-400;
+    border-color: color-mix(in oklch, var(--color-primary-100) 70%, white);
   }
 
   .local-food {
-    @apply border-green-200 hover:border-green-400;
+    border-color: color-mix(in oklch, var(--color-fresh-taste) 60%, white);
   }
 
   /* 우선순위 선택 스타일 */
   .priority-item {
-    @apply rounded-2xl border-2 border-gray-200;
-    @apply hover:border-warm-taste hover:shadow-md;
-    @apply transition-all duration-200;
+    @apply rounded-2xl border border-gray-200;
     @apply cursor-pointer;
+    background: var(--color-surface-muted);
+    transition:
+      border-color 200ms ease,
+      box-shadow 200ms ease,
+      transform 200ms ease;
   }
 
   .priority-item:hover {
     @apply transform scale-[1.02];
+    border-color: color-mix(in oklch, var(--color-ai-purple) 45%, white);
+    box-shadow: var(--shadow-card);
   }
 
   .hover\:scale-102:hover {
@@ -197,6 +299,46 @@
 
   .priority-slot:hover {
     @apply border-warm-taste bg-warm-taste/5;
+  }
+
+  /* 로딩 및 피드백 */
+  .ai-loader {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    border: 3px solid color-mix(in oklch, var(--color-primary-100) 60%, white);
+    border-top-color: var(--color-primary-600);
+    animation: spin 0.8s linear infinite;
+  }
+
+  .skeleton-pulse {
+    @apply rounded-xl;
+    background: linear-gradient(
+      120deg,
+      color-mix(in oklch, white, var(--color-shell) 15%),
+      color-mix(in oklch, white, var(--color-shell) 5%),
+      color-mix(in oklch, white, var(--color-shell) 15%)
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 
   /* 드래그 앤 드롭 애니메이션 */

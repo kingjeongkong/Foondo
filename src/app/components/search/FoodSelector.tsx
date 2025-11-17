@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -58,37 +57,48 @@ export function FoodSelector({
   }, [activeTab]);
 
   return (
-    <Card className="restaurant-card w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="taste-title flex items-center gap-2">
-          🍽️ What do you want to eat in {selectedCity.name}?
-        </CardTitle>
-        <CardDescription className="taste-description">
-          Choose from common foods or local specialties
-        </CardDescription>
+    <Card className="restaurant-card w-full max-w-4xl border border-white/40">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
+              Step 2
+            </p>
+            <CardTitle className="taste-title text-2xl">
+              Choose what to eat in {selectedCity.name}
+            </CardTitle>
+          </div>
+        </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="space-y-6">
         {/* 모바일: 탭 방식 */}
-        <div className="md:hidden">
-          <div className="flex space-x-2 mb-4">
+        <div className="md:hidden space-y-4">
+          <div className="grid grid-cols-2 gap-2">
             <Button
+              type="button"
               variant={activeTab === 'common' ? 'default' : 'outline'}
-              className={`flex-1 ${
+              className={`rounded-2xl ${
                 activeTab === 'common'
-                  ? 'bg-blue-200 text-blue-800 border-2 border-blue-300 hover:bg-blue-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-blue-100'
+                  ? 'shadow-md text-white'
+                  : 'border-gray-200 text-gray-600'
               }`}
+              style={
+                activeTab === 'common'
+                  ? { backgroundColor: 'var(--color-primary-600)' }
+                  : undefined
+              }
               onClick={() => setActiveTab('common')}
             >
               Common Foods
             </Button>
             <Button
+              type="button"
               variant={activeTab === 'local' ? 'default' : 'outline'}
-              className={`flex-1 ${
+              className={`rounded-2xl ${
                 activeTab === 'local'
-                  ? 'bg-green-200 text-green-800 border-2 border-green-300 hover:bg-green-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-green-100'
+                  ? 'bg-emerald-500 text-white shadow hover:bg-emerald-500'
+                  : 'border-gray-200 text-gray-600'
               }`}
               onClick={() => setActiveTab('local')}
             >
@@ -98,7 +108,7 @@ export function FoodSelector({
 
           <div
             ref={scrollContainerRef}
-            className="space-y-2 max-h-70 overflow-y-auto p-3"
+            className="max-h-80 overflow-y-auto space-y-3 rounded-2xl border border-gray-100 bg-white/60 p-3"
           >
             {activeTab === 'common' &&
               COMMON_FOODS.map((food) => (
@@ -111,11 +121,55 @@ export function FoodSelector({
                   isSelected={selectedFood?.id === food.id}
                 />
               ))}
-            {activeTab === 'local' && isLoading ? (
-              <div className="flex justify-center items-center">
-                <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+            {activeTab === 'local' && (
+              <>
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-sm text-gray-500 gap-3">
+                    <div className="ai-loader" />
+                    Loading local flavors...
+                  </div>
+                ) : localFoods.length > 0 ? (
+                  localFoods.map((food) => (
+                    <FoodCard
+                      key={food.id}
+                      food={food}
+                      onSelect={() => onFoodSelect(food)}
+                      isLocal={true}
+                      disabled={disabled}
+                      isSelected={selectedFood?.id === food.id}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center text-sm text-gray-500 py-6">
+                    No local foods available yet.
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* 데스크톱: 2열 그리드 */}
+        <div className="hidden md:grid md:grid-cols-2 gap-6">
+          <div className="space-y-3 max-h-72 overflow-y-auto p-3 rounded-2xl border border-gray-100 bg-white/60">
+            {COMMON_FOODS.map((food) => (
+              <FoodCard
+                key={food.id}
+                food={food}
+                onSelect={() => onFoodSelect(food)}
+                isLocal={false}
+                disabled={disabled}
+                isSelected={selectedFood?.id === food.id}
+              />
+            ))}
+          </div>
+          <div className="space-y-3 max-h-72 overflow-y-auto p-3 rounded-2xl border border-gray-100 bg-white/60">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-sm text-gray-500">
+                <div className="ai-loader" />
+                Loading local foods...
               </div>
-            ) : (
+            ) : localFoods.length > 0 ? (
               localFoods.map((food) => (
                 <FoodCard
                   key={food.id}
@@ -126,71 +180,33 @@ export function FoodSelector({
                   isSelected={selectedFood?.id === food.id}
                 />
               ))
+            ) : (
+              <div className="text-center text-sm text-gray-500 py-10">
+                No local foods detected.
+              </div>
             )}
-          </div>
-        </div>
-
-        {/* 데스크톱: 2열 그리드 */}
-        <div className="hidden md:grid md:grid-cols-2 gap-8">
-          {/* Common Foods Column */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Common Foods
-            </h3>
-            <div className="space-y-2 max-h-60 overflow-y-auto p-2">
-              {COMMON_FOODS.map((food) => (
-                <FoodCard
-                  key={food.id}
-                  food={food}
-                  onSelect={() => onFoodSelect(food)}
-                  isLocal={false}
-                  disabled={disabled}
-                  isSelected={selectedFood?.id === food.id}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Local Foods Column */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {selectedCity.name}&apos;s Local Foods
-            </h3>
-            <div className="space-y-2 max-h-60 overflow-y-auto p-2">
-              {isLoading ? (
-                <div className="flex justify-center items-center">
-                  <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
-                </div>
-              ) : (
-                localFoods.map((food) => (
-                  <FoodCard
-                    key={food.id}
-                    food={food}
-                    onSelect={() => onFoodSelect(food)}
-                    isLocal={true}
-                    disabled={disabled}
-                    isSelected={selectedFood?.id === food.id}
-                  />
-                ))
-              )}
-            </div>
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="flex-col gap-2 items-center">
+      <CardFooter className="flex flex-col gap-3 items-center sm:flex-row sm:justify-between">
         <Button
-          variant="outline"
-          className="ai-recommendation"
+          variant="ghost"
+          onClick={onBack}
+          disabled={disabled}
+          className="w-full sm:w-auto border border-gray-200 rounded-2xl py-5 text-gray-600"
+        >
+          ← Rechoose City
+        </Button>
+        <Button
+          variant="default"
+          className="ai-recommendation w-full sm:w-auto px-6 py-5 text-base font-semibold"
           onClick={onNext}
           disabled={disabled || !selectedFood}
         >
           {selectedFood
             ? `Find ${selectedFood.name} restaurants`
-            : 'Select a food'}
-        </Button>
-        <Button variant="outline" onClick={onBack} disabled={disabled}>
-          ← Rechoose City
+            : 'Select a food to continue'}
         </Button>
       </CardFooter>
     </Card>

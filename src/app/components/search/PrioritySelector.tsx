@@ -4,13 +4,7 @@ import { PRIORITY_ITEMS } from '@/app/data/priorities';
 import { usePrioritySelection } from '@/app/hooks/usePrioritySelection';
 import type { PriorityItem, PrioritySettings } from '@/app/types/search';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AvailablePriorities } from './AvailablePriorities';
 import { SelectedPriorities } from './SelectedPriorities';
 
@@ -59,50 +53,54 @@ export function PrioritySelector({
   };
 
   return (
-    <Card className="restaurant-card w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="taste-title flex items-center gap-2">
-          🎯 Set Your Priorities
-        </CardTitle>
-        <CardDescription className="taste-description">
-          Choose your top 3 priorities for restaurant recommendations
-        </CardDescription>
+    <Card className="restaurant-card w-full max-w-4xl border border-white/40">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
+              Step 3
+            </p>
+            <CardTitle className="taste-title text-2xl">
+              Rank your priorities
+            </CardTitle>
+          </div>
+          <span className="text-xs text-gray-500">
+            {state.selected.length}/3 selected
+          </span>
+        </div>
       </CardHeader>
 
-      <CardContent>
-        <div className="space-y-8">
-          {/* 선택된 우선순위 (TOP 3) */}
-          <div className="space-y-4">
-            <SelectedPriorities
-              selected={state.selected}
-              onDeselect={handleDeselect}
-            />
-          </div>
-
-          {/* 선택 가능한 우선순위 */}
-          <div className="space-y-4">
-            <AvailablePriorities
-              items={state.available}
-              disabled={disabled}
-              onSelect={handleSelect}
-            />
-          </div>
+      <CardContent className="space-y-6">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <SelectedPriorities
+            selected={state.selected}
+            onDeselect={handleDeselect}
+          />
+          <AvailablePriorities
+            items={state.available}
+            disabled={disabled}
+            onSelect={handleSelect}
+          />
         </div>
 
-        {/* 액션 버튼 */}
-        <div className="flex flex-col gap-2 items-center mt-6">
+        <div className="flex flex-col gap-3 items-center sm:flex-row sm:justify-between pt-2">
           <Button
-            variant="outline"
-            className="ai-recommendation"
+            variant="ghost"
+            onClick={onBack}
+            disabled={disabled}
+            className="w-full sm:w-auto border border-gray-200 rounded-2xl py-5 text-gray-600"
+          >
+            ← Back to Food Selection
+          </Button>
+          <Button
+            variant="default"
+            className="ai-recommendation w-full sm:w-auto px-6 py-5 text-base font-semibold"
             onClick={handleComplete}
             disabled={disabled || !isComplete}
           >
             {isComplete
-              ? 'Get AI Recommendations'
+              ? 'Generate AI recommendations'
               : `Select ${3 - state.selected.length} more priority`}
-          </Button>
-          <Button variant="outline" onClick={onBack} disabled={disabled}>
-            ← Back to Food Selection
           </Button>
         </div>
       </CardContent>

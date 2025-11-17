@@ -2,14 +2,7 @@
 
 import type { City } from '@/app/types/city';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import LocationAutocomplete from './LocationAutocomplete';
 
 export interface CitySelectorProps {
@@ -53,39 +46,66 @@ export function CitySelector({
   };
 
   return (
-    <Card className="restaurant-card w-full max-w-sm sm:max-w-md mx-auto">
+    <Card className="restaurant-card w-full max-w-3xl border border-white/40">
       <CardHeader className="pb-4">
-        <CardTitle className="taste-title flex items-center gap-2">
-          🍽️ Choose Your City
-        </CardTitle>
-        <CardDescription className="taste-description">
-          Where would you like to discover amazing food?
-        </CardDescription>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
+              Step 1
+            </p>
+            <CardTitle className="taste-title text-2xl">
+              Select a city
+            </CardTitle>
+          </div>
+          {selectedCity && (
+            <span
+              className="px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background:
+                  'color-mix(in oklch, var(--color-primary-100) 70%, white)',
+                color: 'var(--color-primary-600)',
+              }}
+            >
+              {selectedCity.name}
+            </span>
+          )}
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         <LocationAutocomplete
           onSelect={handleLocationSelect}
           disabled={disabled}
         />
 
-        {selectedCity && (
-          <div className="flex items-center justify-center mt-5">
-            <Button
-              variant={'outline'}
-              className="ai-recommendation p-4 animate-in slide-in-from-top-2 duration-300"
-              onClick={onNext}
-              disabled={disabled || isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                </span>
-              ) : (
-                `Get Recommendations of ${selectedCity.name}'s food`
-              )}
-            </Button>
+        {selectedCity ? (
+          <div className="rounded-2xl border border-gray-200/70 bg-white/70 p-4 text-sm text-gray-600">
+            <p className="text-base font-semibold text-gray-900">
+              {selectedCity.name}
+            </p>
+            <p>{selectedCity.country}</p>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-gray-200 p-4 text-center text-sm text-gray-500">
+            Start typing to choose a destination.
           </div>
         )}
+
+        <Button
+          variant={'default'}
+          className="ai-recommendation w-full px-6 py-5 text-base font-semibold"
+          onClick={onNext}
+          disabled={disabled || !selectedCity || isLoading}
+        >
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <div className="ai-loader w-4 h-4" />
+            </span>
+          ) : selectedCity ? (
+            `Continue with ${selectedCity.name}`
+          ) : (
+            'Select a city to continue'
+          )}
+        </Button>
       </CardContent>
     </Card>
   );

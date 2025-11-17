@@ -21,14 +21,13 @@ export function SelectedPriorities({
     return (
       <div
         className={
-          'priority-slot border-2 border-dashed rounded-2xl p-6 text-center transition-all duration-200 border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
+          'priority-slot border border-dashed rounded-2xl p-6 text-center transition-all duration-200 border-gray-200 bg-white/60 hover:border-gray-300'
         }
       >
         <div className="flex flex-col items-center gap-1 sm:gap-2 text-gray-400 p-2 sm:p-4">
           <div className="text-xl sm:text-2xl">
             {rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}
           </div>
-          <div className="text-xs sm:text-sm font-medium">{rank}순위</div>
           <div className="text-xs text-center">Empty</div>
         </div>
       </div>
@@ -37,10 +36,9 @@ export function SelectedPriorities({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Your Top 3 Priorities
+      <h3 className="text-base font-semibold text-gray-900">
+        Ranked selection
       </h3>
-
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {/* 1순위 */}
         <div className="space-y-2">
@@ -96,7 +94,7 @@ export function SelectedPriorities({
 
       {selected.length > 0 && (
         <div className="text-xs text-gray-500 text-center mt-2">
-          💡 Tap to deselect
+          Tap to deselect
         </div>
       )}
     </div>

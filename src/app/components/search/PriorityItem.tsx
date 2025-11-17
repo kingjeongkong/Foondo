@@ -2,6 +2,7 @@
 
 import type { PriorityItem } from '@/app/types/search';
 import { Card, CardContent } from '@/components/ui/card';
+import type { CSSProperties } from 'react';
 
 export interface PriorityItemProps {
   item: PriorityItem;
@@ -35,17 +36,27 @@ export function PriorityItemComponent({
 
   const getItemStyles = () => {
     let baseStyles =
-      'priority-item priority-item-mobile transition-all duration-200 cursor-pointer';
+      'priority-item priority-item-mobile transition-all duration-200 cursor-pointer relative overflow-hidden bg-white/70';
 
     if (disabled) {
       baseStyles += ' opacity-50 cursor-not-allowed';
-    } else if (isSelected) {
-      baseStyles += ' border-warm-taste bg-warm-taste/5 shadow-md';
-    } else {
-      baseStyles += ' hover:border-warm-taste hover:shadow-md hover:scale-102';
+    } else if (!isSelected) {
+      baseStyles += ' hover:shadow-md hover:scale-102';
     }
 
     return baseStyles;
+  };
+
+  const getItemStyleProps = () => {
+    if (!isSelected) return undefined;
+
+    return {
+      borderColor: 'color-mix(in oklch, var(--color-primary-100) 65%, white)',
+      background:
+        'linear-gradient(135deg, color-mix(in oklch, var(--color-primary-100) 80%, white), #fff)',
+      boxShadow:
+        '0 10px 25px rgba(15, 23, 42, 0.08), 0 0 0 1px color-mix(in oklch, var(--color-primary-100) 65%, white)',
+    } as CSSProperties;
   };
 
   const getRankBadge = () => {
@@ -68,28 +79,21 @@ export function PriorityItemComponent({
   };
 
   return (
-    <Card className={getItemStyles()} onClick={handleClick}>
-      <CardContent className="p-2 sm:p-3 relative">
+    <Card
+      className={getItemStyles()}
+      onClick={handleClick}
+      style={getItemStyleProps()}
+    >
+      <CardContent className="p-3 sm:p-4 relative">
         {getRankBadge()}
 
-        <div className="flex flex-col items-center gap-1 sm:gap-2 text-center">
-          <div className="text-xl sm:text-2xl">{item.emoji}</div>
-          <div className="flex-1 min-w-0 w-full">
-            <h3 className="font-semibold text-xs sm:text-sm text-gray-900 truncate">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <div className="text-2xl">{item.emoji}</div>
+          <div className="flex-1 min-w-0 w-full space-y-1">
+            <h3 className="font-semibold text-sm text-gray-900 truncate">
               {item.name}
             </h3>
-            <p className="text-xs text-gray-500 truncate hidden sm:block">
-              {item.description}
-            </p>
           </div>
-
-          {isSelected && (
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-medium text-warm-taste px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full bg-warm-taste/10">
-                {rank ? `${rank}순위` : 'Selected'}
-              </span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
