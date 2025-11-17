@@ -28,30 +28,47 @@ export function FoodCard({
 }: FoodCardProps) {
   return (
     <Card
-      className={`food-card cursor-pointer hover:shadow-md transition-all duration-200 py-0 ${
+      className={`food-card cursor-pointer transition-all duration-200 py-0 ${
         isLocal ? 'local-food' : 'common-food'
-      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${
-        isSelected
-          ? 'border-warm-taste ring-2 ring-warm-taste bg-warm-taste/5'
-          : ''
-      }`}
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       onClick={disabled ? undefined : onSelect}
+      style={
+        isSelected
+          ? {
+              borderColor:
+                'color-mix(in oklch, var(--color-primary-100) 65%, white)',
+              boxShadow:
+                '0 0 0 2px color-mix(in oklch, var(--color-primary-100) 65%, white)',
+              background:
+                'color-mix(in oklch, var(--color-primary-100) 35%, white)',
+            }
+          : undefined
+      }
     >
       <CardContent className="p-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-sm text-gray-900 truncate">
                 {food.name}
               </h3>
-              <p className="text-xs text-gray-500 truncate">
-                {isLocal ? `[${food.category}]` : food.category}
-              </p>
+              <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">
+                {isLocal && food.category}
+              </span>
             </div>
-            <p className="text-xs text-gray-500">{food.description}</p>
+            <p className="text-xs text-gray-500 line-clamp-2">
+              {food.description}
+            </p>
           </div>
           {isSelected && (
-            <span className="text-xs font-medium text-warm-taste px-2 py-1 rounded-full bg-warm-taste/10">
+            <span
+              className="text-[11px] font-semibold px-3 py-1 rounded-full"
+              style={{
+                background:
+                  'color-mix(in oklch, var(--color-primary-100) 70%, white)',
+                color: 'var(--color-primary-600)',
+              }}
+            >
               Selected
             </span>
           )}

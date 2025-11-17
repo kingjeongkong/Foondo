@@ -68,17 +68,9 @@
 
   /* 타이포그래피 */
   --font-family-heading:
-    'Satoshi',
-    'Pretendard Variable',
-    'SF Pro Display',
-    system-ui,
-    sans-serif;
+    'Satoshi', 'Pretendard Variable', 'SF Pro Display', system-ui, sans-serif;
   --font-family-body:
-    'Inter',
-    'Pretendard Variable',
-    'SF Pro Text',
-    system-ui,
-    sans-serif;
+    'Inter', 'Pretendard Variable', 'SF Pro Text', system-ui, sans-serif;
   --font-size-display: clamp(2rem, 2.5vw, 2.75rem);
   --font-size-title: clamp(1.5rem, 2vw, 2rem);
   --font-size-subtitle: clamp(1.125rem, 1.5vw, 1.375rem);
@@ -146,7 +138,8 @@
   /* SaaS 앱 쉘 */
   .app-shell {
     @apply min-h-screen;
-    background: radial-gradient(
+    background:
+      radial-gradient(
         circle at top right,
         var(--color-primary-100),
         transparent 55%
@@ -159,7 +152,8 @@
     box-shadow: var(--shadow-shell);
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid color-mix(in oklch, var(--color-body) 6%, transparent);
+    border-bottom: 1px solid
+      color-mix(in oklch, var(--color-body) 6%, transparent);
   }
 
   .app-brand {

@@ -108,14 +108,14 @@ export default function LocationAutocomplete({
 
   return (
     <div className="relative">
-      <Command className="food-selection">
+      <Command className="food-selection rounded-2xl border border-gray-200 bg-white/80 shadow-sm">
         <div className="relative">
           <CommandInput
             placeholder="Search for a city..."
             value={inputValue}
             onValueChange={handleInputChange}
             disabled={disabled}
-            className={`pr-6 text-base md:text-sm ${error ? 'ring-2 ring-red-500' : ''} ${
+            className={`pr-6 text-base md:text-sm bg-transparent ${error ? 'ring-2 ring-red-500' : ''} ${
               disabled ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           />
@@ -136,7 +136,7 @@ export default function LocationAutocomplete({
           <CommandList>
             {isLoading ? (
               <div className="px-4 py-3 text-center text-gray-500">
-                <div className="w-5 h-5 border-2 border-warm-taste/20 border-t-warm-taste rounded-full animate-spin mx-auto mb-2"></div>
+                <div className="ai-loader mx-auto mb-2" />
                 <span className="text-sm">Searching for cities...</span>
               </div>
             ) : suggestions.length > 0 ? (
@@ -148,7 +148,7 @@ export default function LocationAutocomplete({
                     onSelect={() => handleSuggestionClick(suggestion)}
                     className="flex items-start space-x-3"
                   >
-                    <MapPin className="w-4 h-4 text-warm-taste mt-0.5 flex-shrink-0" />
+                    <MapPin className="w-4 h-4 text-warm-taste mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {suggestion.text}

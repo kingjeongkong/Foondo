@@ -4,13 +4,7 @@ import { PRIORITY_ITEMS } from '@/app/data/priorities';
 import type { City } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
 import type { PrioritySettings } from '@/app/types/search';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface ResultHeaderProps {
   city: City | null;
@@ -48,52 +42,65 @@ export function ResultHeader({ city, food, priorities }: ResultHeaderProps) {
   const topPriorities = getTopPriorities();
 
   return (
-    <Card className="restaurant-card w-full max-w-4xl mx-auto mb-6">
-      <CardHeader>
-        <CardTitle className="taste-title flex items-center gap-2">
-          🍽️ Recommendations
+    <Card className="restaurant-card w-full border border-white/40 mb-6">
+      <CardHeader className="pb-4">
+        <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
+          Step 4
+        </p>
+        <CardTitle className="taste-title text-2xl">
+          Recommendations ready
         </CardTitle>
-        <CardDescription className="taste-description">
-          {city && food ? (
-            <>
-              <span className="font-semibold text-gray-900">{food.name}</span>{' '}
-              in{' '}
-              <span className="font-semibold text-gray-900">
-                {city.name}
-                {city.country ? `, ${city.country}` : ''}
-              </span>
-            </>
-          ) : (
-            'Restaurant recommendations based on your preferences'
-          )}
-        </CardDescription>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="space-y-4">
+        {(food || city) && (
+          <div className="space-y-1 text-sm">
+            {food && (
+              <div className="flex gap-2 text-gray-600">
+                <span className="uppercase tracking-[0.2em] text-[11px] text-gray-400">
+                  Food
+                </span>
+                <span className="font-semibold text-gray-900">{food.name}</span>
+              </div>
+            )}
+            {city && (
+              <div className="flex gap-2 text-gray-600">
+                <span className="uppercase tracking-[0.2em] text-[11px] text-gray-400">
+                  City
+                </span>
+                <span className="font-semibold text-gray-900">
+                  {city.name}
+                  {city.country ? `, ${city.country}` : ''}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
         {topPriorities.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">
-              Based on your priorities:
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {topPriorities.map((priority, index) => (
-                <div
-                  key={priority.item.id}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-warm-taste/10 border border-warm-taste/20"
-                >
-                  <span className="text-sm">
-                    {priority.rank === 3
-                      ? '🥇'
-                      : priority.rank === 2
-                        ? '🥈'
-                        : '🥉'}
-                  </span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {priority.item.emoji} {priority.item.name}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {topPriorities.map((priority) => (
+              <div
+                key={priority.item.id}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={{
+                  background:
+                    'color-mix(in oklch, var(--color-primary-100) 75%, white)',
+                  color: 'var(--color-primary-600)',
+                }}
+              >
+                <span className="text-sm">
+                  {priority.rank === 3
+                    ? '🥇'
+                    : priority.rank === 2
+                      ? '🥈'
+                      : '🥉'}
+                </span>
+                <span className="text-sm font-medium">
+                  {priority.item.emoji} {priority.item.name}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

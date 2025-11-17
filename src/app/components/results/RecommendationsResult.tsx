@@ -34,35 +34,30 @@ export function RecommendationsResult({
   onNewSearch,
 }: RecommendationsResultProps) {
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
-      {/* 헤더: 선택한 정보 요약 */}
+    <div className="w-full max-w-4xl mx-auto space-y-5">
       <ResultHeader city={city} food={food} priorities={priorities} />
 
-      {/* 로딩 상태 */}
       {isLoading && (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-warm-taste mb-4"></div>
-          <p className="text-gray-600 mb-4">
-            🔄 Finding your perfect restaurants...
-          </p>
-          <p className="text-sm text-gray-500">
-            AI is analyzing reviews and generating recommendations
-          </p>
+        <div className="restaurant-card w-full border border-white/40 text-center py-10 space-y-3">
+          <div className="ai-loader mx-auto" />
+          <p className="text-gray-700 font-semibold">Gathering results...</p>
         </div>
       )}
 
-      {/* 에러 상태 */}
       {error && !isLoading && (
-        <div className="text-center py-12">
-          <p className="text-red-600 mb-4">❌ Failed to get recommendations</p>
-          <p className="text-sm text-gray-600 mb-4">{error.message}</p>
-          <Button onClick={onBack} variant="outline">
+        <div className="restaurant-card w-full border border-red-200/60 bg-red-50/60 text-center py-8 space-y-3">
+          <p className="text-red-600 font-semibold">Something went wrong</p>
+          <p className="text-sm text-gray-600">{error.message}</p>
+          <Button
+            onClick={onBack}
+            variant="ghost"
+            className="border border-gray-200"
+          >
             ← Back to Priority Selection
           </Button>
         </div>
       )}
 
-      {/* 추천 결과 목록 */}
       {!isLoading && !error && (
         <div className="space-y-4">
           {recommendations.length > 0 ? (
@@ -76,9 +71,13 @@ export function RecommendationsResult({
               />
             ))
           ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600 mb-4">No recommendations found.</p>
-              <Button onClick={onBack} variant="outline">
+            <div className="restaurant-card w-full border border-white/40 text-center py-10 space-y-2">
+              <p className="text-gray-600">No recommendations found.</p>
+              <Button
+                onClick={onBack}
+                variant="ghost"
+                className="border border-gray-200"
+              >
                 ← Back to Priority Selection
               </Button>
             </div>
@@ -86,18 +85,21 @@ export function RecommendationsResult({
         </div>
       )}
 
-      {/* 하단 액션 버튼 */}
-      <div className="flex flex-col sm:flex-row gap-3 justify-center items-center pt-4">
-        <Button onClick={onBack} variant="outline" className="w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row gap-3 justify-center items-center pt-2">
+        <Button
+          onClick={onBack}
+          variant="ghost"
+          className="w-full sm:w-auto border border-gray-200"
+        >
           ← Back to Priority Selection
         </Button>
         {onNewSearch && (
           <Button
             onClick={onNewSearch}
-            variant="outline"
-            className="w-full sm:w-auto"
+            variant="default"
+            className="ai-recommendation w-full sm:w-auto px-6 py-5 font-semibold"
           >
-            🔄 New Search
+            🔄 Start a new search
           </Button>
         )}
       </div>
