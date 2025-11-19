@@ -69,3 +69,49 @@ export type RecommendationResponse = z.infer<
  * 추천 API 요청 타입
  */
 export type RecommendationRequest = z.infer<typeof recommendationRequestSchema>;
+
+export type RecommendationProgressStep =
+  | 'SEARCH_RESTAURANTS'
+  | 'COLLECT_REVIEWS'
+  | 'ANALYZE_REPORTS'
+  | 'CALCULATE_SCORES';
+
+export type RecommendationProgressStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'error';
+
+export interface RecommendationProgressStateItem {
+  status: RecommendationProgressStatus;
+  message?: string;
+  meta?: Record<string, unknown>;
+}
+
+export type RecommendationProgressState = Record<
+  RecommendationProgressStep,
+  RecommendationProgressStateItem
+>;
+
+export interface RecommendationProgressEvent {
+  type: 'progress';
+  step: RecommendationProgressStep;
+  status: RecommendationProgressStatus;
+  message?: string;
+  meta?: Record<string, unknown>;
+}
+
+export interface RecommendationResultEvent {
+  type: 'result';
+  payload: RecommendationResponse;
+}
+
+export interface RecommendationErrorEvent {
+  type: 'error';
+  message: string;
+}
+
+export type RecommendationStreamEvent =
+  | RecommendationProgressEvent
+  | RecommendationResultEvent
+  | RecommendationErrorEvent;
