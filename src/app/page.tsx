@@ -4,14 +4,25 @@ import { RecommendationsResult } from '@/app/components/results/RecommendationsR
 import { CitySelector } from '@/app/components/search/CitySelector';
 import { FoodSelector } from '@/app/components/search/FoodSelector';
 import { PrioritySelector } from '@/app/components/search/PrioritySelector';
+import { useCity } from '@/app/hooks/useCity';
+import { useFood } from '@/app/hooks/useFood';
+import { useRecommendation } from '@/app/hooks/useRecommendation';
 import type { City, CreateCityRequest } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
-import type { Recommendation } from '@/app/types/recommendations';
+import type {
+  Recommendation,
+  RecommendationProgressEvent,
+  RecommendationProgressState,
+} from '@/app/types/recommendations';
 import type { PrioritySettings } from '@/app/types/search';
-import { useState } from 'react';
-import { useCity } from './hooks/useCity';
-import { useFood } from './hooks/useFood';
-import { useRecommendation } from './hooks/useRecommendation';
+import { useCallback, useState } from 'react';
+
+const createInitialProgressState = (): RecommendationProgressState => ({
+  SEARCH_RESTAURANTS: { status: 'pending' },
+  COLLECT_REVIEWS: { status: 'pending' },
+  ANALYZE_REPORTS: { status: 'pending' },
+  CALCULATE_SCORES: { status: 'pending' },
+});
 
 /**
  * 메인 페이지 컴포넌트
@@ -29,6 +40,8 @@ export default function Home() {
   const [recommendationError, setRecommendationError] = useState<Error | null>(
     null
   );
+  const [progressState, setProgressState] =
+    useState<RecommendationProgressState>(() => createInitialProgressState());
 
   const { createOrGetCity, isCreatingCity, getCachedCity } = useCity();
   const { localFoods, isLoadingFoods } = useFood(
@@ -45,18 +58,35 @@ export default function Home() {
     setSelectedFood(food);
   };
 
+  const handleProgressUpdate = useCallback(
+    (event: RecommendationProgressEvent) => {
+      setProgressState((prev) => ({
+        ...prev,
+        [event.step]: {
+          status: event.status,
+          meta: event.meta,
+          message: event.message,
+        },
+      }));
+    },
+    []
+  );
+
   const handlePriorityComplete = async (priorities: PrioritySettings) => {
     setSelectedPriorities(priorities);
     setCurrentStep('results');
     setRecommendationError(null);
+    setProgressState(createInitialProgressState());
 
     if (selectedCity && selectedFood) {
       try {
-        // TODO: 전송하는 데이터 수정 필요
         const result = await getRecommendations({
-          city: selectedCity,
-          food: selectedFood,
-          priorities,
+          request: {
+            city: selectedCity,
+            food: selectedFood,
+            priorities,
+          },
+          onProgress: handleProgressUpdate,
         });
         setRecommendations(result.data.recommendations);
         setRecommendationError(null);
@@ -102,6 +132,7 @@ export default function Home() {
       setCurrentStep('food');
     } else if (currentStep === 'results') {
       setCurrentStep('priority');
+      setProgressState(createInitialProgressState());
     }
   };
 
@@ -111,6 +142,7 @@ export default function Home() {
     setSelectedPriorities(null);
     setRecommendations([]);
     setRecommendationError(null);
+    setProgressState(createInitialProgressState());
     setCurrentStep('city');
   };
 
@@ -192,6 +224,7 @@ export default function Home() {
           error={recommendationError}
           onBack={handleBack}
           onNewSearch={handleNewSearch}
+          progress={progressState}
         />
       );
     }

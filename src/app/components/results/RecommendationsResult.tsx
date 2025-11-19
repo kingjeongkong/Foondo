@@ -1,12 +1,16 @@
 'use client';
 
+import { RecommendationProgress } from '@/app/components/results/RecommendationProgress';
+import { RestaurantCard } from '@/app/components/results/RestaurantCard';
+import { ResultHeader } from '@/app/components/results/ResultHeader';
 import type { City } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
-import type { Recommendation } from '@/app/types/recommendations';
+import type {
+  Recommendation,
+  RecommendationProgressState,
+} from '@/app/types/recommendations';
 import type { PrioritySettings } from '@/app/types/search';
 import { Button } from '@/components/ui/button';
-import { RestaurantCard } from './RestaurantCard';
-import { ResultHeader } from './ResultHeader';
 
 export interface RecommendationsResultProps {
   city: City | null;
@@ -17,6 +21,7 @@ export interface RecommendationsResultProps {
   error: Error | null;
   onBack: () => void;
   onNewSearch?: () => void;
+  progress?: RecommendationProgressState;
 }
 
 /**
@@ -32,17 +37,13 @@ export function RecommendationsResult({
   error,
   onBack,
   onNewSearch,
+  progress,
 }: RecommendationsResultProps) {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-5">
       <ResultHeader city={city} food={food} priorities={priorities} />
 
-      {isLoading && (
-        <div className="restaurant-card w-full border border-white/40 text-center py-10 space-y-3">
-          <div className="ai-loader mx-auto" />
-          <p className="text-gray-700 font-semibold">Gathering results...</p>
-        </div>
-      )}
+      {isLoading && <RecommendationProgress progress={progress} />}
 
       {error && !isLoading && (
         <div className="restaurant-card w-full border border-red-200/60 bg-red-50/60 text-center py-8 space-y-3">
