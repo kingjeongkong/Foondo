@@ -1,19 +1,29 @@
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { recommendationService } from '../services/recommendationService';
-import { RecommendationRequest } from '../types/recommendations';
+import type {
+  RecommendationProgressEvent,
+  RecommendationRequest,
+} from '../types/recommendations';
 
 export function useRecommendation() {
+  interface RecommendationMutationVariables {
+    request: RecommendationRequest;
+    onProgress?: (event: RecommendationProgressEvent) => void;
+  }
+
   const {
     mutateAsync: getRecommendations,
     isPending: isGettingRecommendations,
   } = useMutation({
-    mutationFn: (data: RecommendationRequest) => {
-      return recommendationService().getRecommendations(data);
+    mutationFn: ({ request, onProgress }: RecommendationMutationVariables) => {
+      return recommendationService().getRecommendations(request, {
+        onProgress,
+      });
     },
-    onError: () => {
-      toast.error('Failed to get recommendations');
-      throw new Error('Failed to get recommendations');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to get recommendations');
+      throw error;
     },
   });
 
