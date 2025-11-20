@@ -207,6 +207,7 @@ export async function POST(request: NextRequest) {
             priorities
           );
 
+          await new Promise((resolve) => setTimeout(resolve, 300));
           completeStep('CALCULATE_SCORES', {
             rankedCount: restaurantScores.length,
           });
