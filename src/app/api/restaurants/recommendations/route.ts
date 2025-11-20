@@ -14,6 +14,7 @@ import {
 } from '@/lib/services/restaurantService';
 import { Restaurant, RestaurantReport } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
+import pLimit from 'p-limit';
 import { z } from 'zod';
 
 /**
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
             city.name,
             food.id,
             food.name,
-            5
+            20
           );
 
           const existingRestaurants = await getExistingRestaurantsByFood(
@@ -128,6 +129,8 @@ export async function POST(request: NextRequest) {
 
           let reportResults: PromiseSettledResult<RestaurantReport>[];
 
+          const reportLimiter = pLimit(5);
+
           if (reviewDataList.length === 0) {
             // 리뷰 데이터가 없으면 최소 지연 후 스킵
             await new Promise((resolve) => setTimeout(resolve, 500));
@@ -136,7 +139,7 @@ export async function POST(request: NextRequest) {
           } else {
             const reportPromises = reviewDataList.map(
               (reviewData: ReviewData) =>
-                analyzeAndSaveRestaurantReport(reviewData)
+                reportLimiter(() => analyzeAndSaveRestaurantReport(reviewData))
             );
             reportResults = await Promise.allSettled(reportPromises);
             completeStep('ANALYZE_REPORTS');
