@@ -114,35 +114,71 @@ export async function POST(request: NextRequest) {
 
           // 단계 2: 리뷰 수집
           beginStep('COLLECT_REVIEWS');
-          const reviewDataList = await collectRestaurantReviews(newRestaurants);
-          const withReviewsCount = reviewDataList.filter(
-            (reviewData) => reviewData.reviews.length > 0
-          ).length;
-          const withoutReviewsCount = reviewDataList.length - withReviewsCount;
 
-          completeStep('COLLECT_REVIEWS', {
-            reviewTargets: newRestaurants.length,
-            processed: reviewDataList.length,
-            withReviews: withReviewsCount,
-            withoutReviews: withoutReviewsCount,
-          });
+          let reviewDataList: ReviewData[];
+          let withReviewsCount = 0;
+          let withoutReviewsCount = 0;
+
+          if (newRestaurants.length === 0) {
+            // 새로운 음식점이 없으면 최소 지연 후 스킵
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            reviewDataList = [];
+            completeStep('COLLECT_REVIEWS', {
+              reviewTargets: 0,
+              processed: 0,
+              withReviews: 0,
+              withoutReviews: 0,
+              skipped: true,
+              message: '기존 데이터 사용 중 (리뷰 수집 불필요)',
+            });
+          } else {
+            reviewDataList = await collectRestaurantReviews(newRestaurants);
+            withReviewsCount = reviewDataList.filter(
+              (reviewData) => reviewData.reviews.length > 0
+            ).length;
+            withoutReviewsCount = reviewDataList.length - withReviewsCount;
+
+            completeStep('COLLECT_REVIEWS', {
+              reviewTargets: newRestaurants.length,
+              processed: reviewDataList.length,
+              withReviews: withReviewsCount,
+              withoutReviews: withoutReviewsCount,
+            });
+          }
 
           // 단계 3: AI 분석 + 리포트 저장
           beginStep('ANALYZE_REPORTS');
 
-          const reportPromises = reviewDataList.map((reviewData: ReviewData) =>
-            analyzeAndSaveRestaurantReport(reviewData)
-          );
-          const reportResults = await Promise.allSettled(reportPromises);
-          const successfulReports = reportResults.filter(
-            (result: PromiseSettledResult<RestaurantReport>) =>
-              result.status === 'fulfilled'
-          ).length;
+          let reportResults: PromiseSettledResult<RestaurantReport>[];
+          let successfulReports = 0;
 
-          completeStep('ANALYZE_REPORTS', {
-            requestedReports: reviewDataList.length,
-            successfulReports,
-          });
+          if (reviewDataList.length === 0) {
+            // 리뷰 데이터가 없으면 최소 지연 후 스킵
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            reportResults = [];
+            successfulReports = existingRestaurants.length;
+            completeStep('ANALYZE_REPORTS', {
+              requestedReports: 0,
+              successfulReports,
+              skipped: true,
+              message: '기존 리포트 사용 중 (분석 불필요)',
+            });
+          } else {
+            const reportPromises = reviewDataList.map(
+              (reviewData: ReviewData) =>
+                analyzeAndSaveRestaurantReport(reviewData)
+            );
+            reportResults = await Promise.allSettled(reportPromises);
+            successfulReports = reportResults.filter(
+              (result: PromiseSettledResult<RestaurantReport>) =>
+                result.status === 'fulfilled'
+            ).length;
+
+            completeStep('ANALYZE_REPORTS', {
+              requestedReports: reviewDataList.length,
+              successfulReports,
+            });
+          }
 
           // 단계 4: 점수 계산 및 랭킹
           beginStep('CALCULATE_SCORES');
