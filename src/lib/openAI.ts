@@ -50,7 +50,7 @@ export class OpenAIService {
           input: userPrompt,
           temperature: this.config.temperature,
         },
-        { maxRetries: 1 }
+        { maxRetries: 3 }
       );
 
       const output = response.output_text as string | undefined;
