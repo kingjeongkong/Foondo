@@ -317,21 +317,21 @@ export function calculateRestaurantScores(
   reports: RestaurantReport[],
   priorities: PrioritySettings
 ): ScoredRestaurant[] {
-  // 1. 우선순위를 가중치로 변환
-  const weightMap: Record<number, number> = {
-    3: 3.0, // 1순위
-    2: 2.0, // 2순위
-    1: 1.0, // 3순위
-    0: 0.0, // 미선택
+  // 1. 순위를 가중치로 변환
+  const rankToWeightMap: Record<number, number> = {
+    1: 2.0, // 1순위
+    2: 1.5, // 2순위
+    3: 1.2, // 3순위
+    0: 0.8, // 미선택
   };
 
   const weights = {
-    taste: weightMap[priorities.taste],
-    price: weightMap[priorities.price],
-    atmosphere: weightMap[priorities.atmosphere],
-    service: weightMap[priorities.service],
-    quantity: weightMap[priorities.quantity],
-    accessibility: weightMap[priorities.accessibility],
+    taste: rankToWeightMap[priorities.taste],
+    price: rankToWeightMap[priorities.price],
+    atmosphere: rankToWeightMap[priorities.atmosphere],
+    service: rankToWeightMap[priorities.service],
+    quantity: rankToWeightMap[priorities.quantity],
+    accessibility: rankToWeightMap[priorities.accessibility],
   };
 
   const totalWeight =
