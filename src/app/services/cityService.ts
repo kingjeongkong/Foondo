@@ -28,7 +28,32 @@ export function cityService() {
     }
   };
 
+  const getCity = async (id: string): Promise<CityResponse> => {
+    try {
+      const response = await fetch(`/api/cities/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch city');
+      }
+
+      return response.json();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw error;
+      }
+
+      throw new Error('An unknown error occurred', { cause: error });
+    }
+  };
+
   return {
     createOrGetCity,
+    getCity,
   };
 }
