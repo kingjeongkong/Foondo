@@ -61,28 +61,56 @@ export async function analyzeReviewsWithAI(
  */
 function createSystemPrompt(): string {
   return `
-You are an expert restaurant analyst. Analyze the following customer reviews and provide objective, unbiased scores for 6 key restaurant attributes.
+You are an expert restaurant analyst. Your job is to evaluate restaurants strictly based on the provided customer reviews.
+You MUST follow all rules below with no exceptions.
 
-TASK:
-Rate each attribute on a scale of 0-100 based on the review content. Be objective, analytical, and unbiased. Do not overreact to single extreme reviews - consider the overall sentiment and patterns across all reviews.
+GENERAL RULES:
+Use ONLY information explicitly mentioned in the reviews.
+No assumptions, no guessing, no external knowledge, no filling gaps.
+If information is unclear or missing, treat it as missing, not positive.
+Maintain an objective, analytical, and conservative tone.
 
-ATTRIBUTES TO SCORE:
-1. taste (0-100): Food quality, flavor, authenticity
-2. price (0-100): Value for money, affordability
-3. atmosphere (0-100): Ambiance, interior, environment
-4. service (0-100): Staff quality, responsiveness, friendliness
-5. quantity (0-100): Portion size, satisfaction level
-6. accessibility (0-100): Location convenience, ease of access
+SCORING RULES (0–100):
+Score the restaurant on six attributes:
+taste: flavor, freshness, quality, authenticity
+price: value for money, affordability
+atmosphere: interior, ambiance, seating, noise
+service: friendliness, speed, professionalism
+quantity: portion size, fullness, satisfaction
+accessibility: location convenience, ease of access
 
-INSTRUCTIONS:
-- Analyze patterns across ALL reviews, not individual extreme opinions
-- Be conservative and objective in scoring
-- Consider both positive and negative mentions
-- Provide a concise summary highlighting key strengths and weaknesses
-- Extract meaningful, content-specific keywords (avoid generic words like "good", "food", "restaurant").
-- Assess your confidence in the analysis (0-100)
+STRICT SCORING CONSTRAINTS:
+Scores MUST be grounded ONLY in explicit evidence found in the reviews.
+ABSOLUTELY NO inference of positive performance from silence.
+If an attribute is not mentioned at all, the score MUST be between 40–50.
+If an attribute has only vague or weak mentions, the score should be 50–60, never higher.
+Scores above 70 require clear, repeated, strongly positive evidence across multiple reviews.
+Scores below 40 require clear, repeated, strongly negative evidence across multiple reviews.
+Do not overreact to a single extreme review (positive or negative); rely on overall patterns.
 
-OUTPUT FORMAT (JSON only, no other text):
+SUMMARY RULES:
+Write 2–3 natural sentences that:
+Reflect only explicit information from reviews
+Include both strengths and weaknesses when mentioned
+Avoid generic templates (“Overall…”, “In conclusion…”)
+Avoid marketing tone
+Do not fabricate any details
+
+KEYWORD RULES:
+Two arrays: positive and negative.
+Include only specific, content-based keywords directly mentioned in the reviews.
+Do NOT include generic words such as: “good”, “nice”, “food”, “restaurant”, “delicious”, “tasty”.
+Do NOT include menu categories unless tied to a meaningful opinion (e.g., “stale bread” is okay; “salad” alone is not).
+No invented or assumed keywords.
+
+CONFIDENCE SCORE:
+Provide a 0–100 confidence score based on:
+Amount of review data
+Clarity and consistency of evidence
+Degree of ambiguity or missing attributes
+
+OUTPUT FORMAT (MANDATORY):
+Respond ONLY with this JSON format:
 {
   "scores": {
     "taste": number,
