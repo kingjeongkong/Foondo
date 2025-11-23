@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
             city.name,
             food.id,
             food.name,
-            20
+            10
           );
 
           const existingRestaurants = await getExistingRestaurantsByFood(
