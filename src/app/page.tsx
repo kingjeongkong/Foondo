@@ -15,6 +15,7 @@ import type {
   RecommendationProgressState,
 } from '@/app/types/recommendations';
 import type { PrioritySettings } from '@/app/types/search';
+import { ProgressPanel } from '@/components/common/ProgressPanel';
 import { useCallback, useState } from 'react';
 
 const createInitialProgressState = (): RecommendationProgressState => ({
@@ -146,15 +147,6 @@ export default function Home() {
     setCurrentStep('city');
   };
 
-  // 단계 진행 상태 계산
-  const stepOrder: Array<typeof currentStep> = [
-    'city',
-    'food',
-    'priority',
-    'results',
-  ];
-  const currentStepIndex = stepOrder.indexOf(currentStep);
-
   const steps = [
     {
       key: 'city' as const,
@@ -251,76 +243,13 @@ export default function Home() {
 
       <div className="container mx-auto px-4 py-8 lg:py-12">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-          <aside className="progress-panel space-y-5 shrink-0">
-            <div>
-              <p className="text-sm text-gray-500">Progress</p>
-              <p className="text-xl font-semibold text-gray-900">
-                Guided AI workflow
-              </p>
-            </div>
-            <div className="space-y-3">
-              {steps.map((step, index) => {
-                const status =
-                  index < currentStepIndex
-                    ? 'complete'
-                    : index === currentStepIndex
-                      ? 'current'
-                      : 'upcoming';
-
-                return (
-                  <div
-                    key={step.key}
-                    className={`progress-pill ${
-                      status === 'current' ? 'progress-pill-active' : ''
-                    }`}
-                  >
-                    <span
-                      className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
-                        status === 'complete'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                      style={
-                        status === 'current'
-                          ? {
-                              backgroundColor: 'var(--color-primary-100)',
-                              color: 'var(--color-primary-600)',
-                            }
-                          : undefined
-                      }
-                    >
-                      {index + 1}
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-gray-900">
-                        {step.label}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {step.description}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="rounded-2xl border border-dashed border-gray-200 p-4 text-sm text-gray-600">
-              <p className="font-semibold text-gray-900 mb-1">
-                Session summary
-              </p>
-              <p>City: {selectedCity?.name ?? 'Not selected'}</p>
-              <p>Food: {selectedFood?.name ?? 'Not selected'}</p>
-              <p>
-                Priorities:{' '}
-                {selectedPriorities
-                  ? Object.values(selectedPriorities)
-                      .map((priority) => priority?.name)
-                      .filter(Boolean)
-                      .join(', ')
-                  : 'Not selected'}
-              </p>
-            </div>
-          </aside>
+          <ProgressPanel
+            steps={steps}
+            currentStep={currentStep}
+            selectedCity={selectedCity}
+            selectedFood={selectedFood}
+            selectedPriorities={selectedPriorities}
+          />
 
           <main className="flex-1 min-w-0">
             <div className="flex justify-start w-full">{renderStepCard()}</div>

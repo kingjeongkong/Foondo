@@ -36,5 +36,3 @@ export function Step<T extends string>({ children }: StepProps<T>) {
 
 // 사용 편의를 위해 합쳐서 내보내기
 export const FunnelComponent = Object.assign(Funnel, { Step });
-
-
