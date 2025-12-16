@@ -4,11 +4,9 @@ import { RecommendationsResult } from '@/app/components/results/RecommendationsR
 import { CitySelector } from '@/app/components/search/CitySelector';
 import { FoodSelector } from '@/app/components/search/FoodSelector';
 import { PrioritySelector } from '@/app/components/search/PrioritySelector';
-import { useCity } from '@/app/hooks/useCity';
 import { useFood } from '@/app/hooks/useFood';
 import { useRecommendation } from '@/app/hooks/useRecommendation';
-import type { City, CreateCityRequest } from '@/app/types/city';
-import type { Food } from '@/app/types/food';
+import { useSearchFlow } from '@/app/hooks/useSearchFlow';
 import type {
   Recommendation,
   RecommendationProgressEvent,
@@ -30,13 +28,11 @@ const createInitialProgressState = (): RecommendationProgressState => ({
  * AI 기반 맛집 추천 시스템의 진입점
  */
 export default function Home() {
-  const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [selectedFood, setSelectedFood] = useState<Food | null>(null);
-  const [selectedPriorities, setSelectedPriorities] =
-    useState<PrioritySettings | null>(null);
-  const [currentStep, setCurrentStep] = useState<
-    'city' | 'food' | 'priority' | 'results'
-  >('city');
+  // 검색 플로우 관리 (URL 동기화 포함)
+  const { step, prev, data, handlers, status } = useSearchFlow();
+  const { selectedCity, selectedFood, selectedPriorities } = data;
+
+  // Results 단계 전용 상태 (나중에 useRecommendationFlow로 분리 예정)
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [recommendationError, setRecommendationError] = useState<Error | null>(
     null
@@ -44,21 +40,11 @@ export default function Home() {
   const [progressState, setProgressState] =
     useState<RecommendationProgressState>(() => createInitialProgressState());
 
-  const { createOrGetCity, isCreatingCity, getCachedCity } = useCity();
-  const { localFoods, isLoadingFoods } = useFood(
-    selectedCity,
-    currentStep === 'food'
-  );
+  // Food 데이터 fetching (FoodSelector에서 사용)
+  const { localFoods, isLoadingFoods } = useFood(selectedCity, step === 'food');
   const { getRecommendations, isGettingRecommendations } = useRecommendation();
 
-  const handleCitySelect = (city: City) => {
-    setSelectedCity(city);
-  };
-
-  const handleFoodSelect = (food: Food) => {
-    setSelectedFood(food);
-  };
-
+  // Progress 업데이트 핸들러 (Results 단계 전용)
   const handleProgressUpdate = useCallback(
     (event: RecommendationProgressEvent) => {
       setProgressState((prev) => ({
@@ -73,9 +59,12 @@ export default function Home() {
     []
   );
 
+  // Priority 완료 핸들러 (Results 단계로 이동 + Recommendations fetch)
   const handlePriorityComplete = async (priorities: PrioritySettings) => {
-    setSelectedPriorities(priorities);
-    setCurrentStep('results');
+    // useSearchFlow의 handlePriorityComplete 호출 (step 이동)
+    handlers.handlePriorityComplete(priorities);
+
+    // Results 단계 로직 (나중에 useRecommendationFlow로 분리 예정)
     setRecommendationError(null);
     setProgressState(createInitialProgressState());
 
@@ -98,53 +87,21 @@ export default function Home() {
     }
   };
 
-  const handleNext = async () => {
-    if (currentStep === 'city') {
-      if (!selectedCity) {
-        return;
-      }
-
-      // 캐시 확인 (이미 요청한 적이 있는 경우)
-      const cachedCity = getCachedCity(selectedCity.id);
-      if (cachedCity) {
-        // 캐시에 있으면 바로 다음 단계로
-        setCurrentStep('food');
-        return;
-      }
-
-      // POST 요청 (서버에서 존재하면 반환, 없으면 생성)
-      const requestData: CreateCityRequest = {
-        id: selectedCity.id,
-        name: selectedCity.name,
-        country: selectedCity.country ?? '',
-      };
-      await createOrGetCity(requestData);
-      setCurrentStep('food');
-    } else if (currentStep === 'food') {
-      setCurrentStep('priority');
-    }
-  };
-
+  // 뒤로가기 핸들러
   const handleBack = () => {
-    if (currentStep === 'food') {
-      setCurrentStep('city');
-      setSelectedCity(null);
-    } else if (currentStep === 'priority') {
-      setCurrentStep('food');
-    } else if (currentStep === 'results') {
-      setCurrentStep('priority');
+    if (step === 'results') {
+      // results 단계에서 뒤로가기 시 progress state 초기화
       setProgressState(createInitialProgressState());
     }
+    prev();
   };
 
+  // 새 검색 시작
   const handleNewSearch = () => {
-    setSelectedCity(null);
-    setSelectedFood(null);
-    setSelectedPriorities(null);
+    handlers.handleNewSearch();
     setRecommendations([]);
     setRecommendationError(null);
     setProgressState(createInitialProgressState());
-    setCurrentStep('city');
   };
 
   const steps = [
@@ -171,32 +128,32 @@ export default function Home() {
   ];
 
   const renderStepCard = () => {
-    if (currentStep === 'city') {
+    if (step === 'city') {
       return (
         <CitySelector
-          onCitySelect={handleCitySelect}
-          onNext={handleNext}
+          onCitySelect={handlers.handleCitySelect}
+          onNext={handlers.handleNext}
           selectedCity={selectedCity}
-          isLoading={isCreatingCity}
+          isLoading={status.isCreatingCity}
         />
       );
     }
 
-    if (currentStep === 'food' && selectedCity) {
+    if (step === 'food' && selectedCity) {
       return (
         <FoodSelector
           localFoods={localFoods}
           selectedCity={selectedCity}
           selectedFood={selectedFood}
-          onFoodSelect={handleFoodSelect}
-          onNext={handleNext}
+          onFoodSelect={handlers.handleFoodSelect}
+          onNext={handlers.handleNext}
           onBack={handleBack}
           isLoading={isLoadingFoods}
         />
       );
     }
 
-    if (currentStep === 'priority' && selectedCity && selectedFood) {
+    if (step === 'priority' && selectedCity && selectedFood) {
       return (
         <PrioritySelector
           onComplete={handlePriorityComplete}
@@ -205,7 +162,7 @@ export default function Home() {
       );
     }
 
-    if (currentStep === 'results') {
+    if (step === 'results') {
       return (
         <RecommendationsResult
           city={selectedCity}
@@ -245,7 +202,7 @@ export default function Home() {
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
           <ProgressPanel
             steps={steps}
-            currentStep={currentStep}
+            currentStep={step}
             selectedCity={selectedCity}
             selectedFood={selectedFood}
             selectedPriorities={selectedPriorities}
