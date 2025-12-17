@@ -26,14 +26,19 @@ export function useFood(city: City | null, enabled: boolean) {
  * COMMON_FOODS 또는 localFoods (React Query 캐시)에서 검색
  * @param cityId - 선택된 도시 ID (localFoods 조회용)
  * @param foodId - URL에서 가져온 food ID
+ * @param enabled - localFoods 패칭 활성화 여부 (food step일 때만 true)
  * @returns Food 객체 또는 null (찾을 수 없을 경우)
  */
-export function useFoodFromCache(cityId: string | null, foodId: string | null) {
+export function useFoodFromCache(
+  cityId: string | null,
+  foodId: string | null,
+  enabled: boolean = false
+) {
   // cityId로부터 City 객체 복원 (localFoods 조회용)
   const selectedCity = useCityFromCache(cityId);
 
-  // localFoods 조회 (cityId가 있을 때만)
-  const { localFoods } = useFood(selectedCity, !!cityId);
+  // localFoods 조회 (enabled가 true일 때만 패칭)
+  const { localFoods } = useFood(selectedCity, enabled && !!cityId);
 
   // foodId로 Food 객체 찾기
   const food = useMemo(() => {

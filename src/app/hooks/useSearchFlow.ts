@@ -1,6 +1,7 @@
 import type { City, CreateCityRequest } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
 import type { PrioritySettings } from '@/app/types/search';
+import { useRouter } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
 import { useCity, useCityFromCache } from './useCity';
@@ -13,7 +14,8 @@ import { useFunnel } from './useFunnel';
  * City/Food 선택 및 step navigation 로직을 제공합니다.
  */
 export function useSearchFlow() {
-  const { step, setStep, next, prev } = useFunnel();
+  const router = useRouter();
+  const { step, next, setStep } = useFunnel();
 
   // URL에 검색 조건 저장 (공유/북마크/복구 지원)
   const [cityId, setCityId] = useQueryState('cityId');
@@ -21,7 +23,12 @@ export function useSearchFlow() {
 
   // URL에서 데이터 복원
   const selectedCity = useCityFromCache(cityId);
-  const selectedFood = useFoodFromCache(cityId, foodId);
+  // food step일 때만 localFoods 패칭 (COMMON_FOODS는 항상 사용 가능)
+  const selectedFood = useFoodFromCache(
+    cityId,
+    foodId,
+    ['food', 'priority', 'results'].includes(step)
+  );
 
   // Priority는 URL에 저장하지 않음 (복잡한 객체이므로)
   const [selectedPriorities, setSelectedPriorities] =
@@ -32,14 +39,14 @@ export function useSearchFlow() {
 
   // City 선택 핸들러 (선택만 처리, API 호출은 handleNext에서)
   const handleCitySelect = (city: City) => {
-    // URL에 cityId만 저장 (API 호출은 Continue 버튼 클릭 시)
-    setCityId(city.id);
+    // URL에 cityId만 저장 (history: 'replace'로 같은 step 내에서의 선택 변경은 히스토리에 쌓지 않음)
+    setCityId(city.id, { history: 'replace' });
   };
 
   // Food 선택 핸들러 (선택만 처리, next는 별도)
   const handleFoodSelect = (food: Food) => {
-    // URL에 foodId 저장
-    setFoodId(food.id);
+    // URL에 foodId 저장 (history: 'replace'로 같은 step 내에서의 선택 변경은 히스토리에 쌓지 않음)
+    setFoodId(food.id, { history: 'replace' });
   };
 
   // 다음 단계로 이동 (유효성 검사 및 API 호출 포함)
@@ -80,21 +87,33 @@ export function useSearchFlow() {
   // Priority 완료 핸들러
   const handlePriorityComplete = (priorities: PrioritySettings) => {
     setSelectedPriorities(priorities);
-    next(); // results 단계로 이동
+    next();
+  };
+
+  // 뒤로가기 핸들러
+  // [규칙 3] 뒤로가기: 무조건 'router.back()' (POP)
+  // setStep이나 router.replace를 쓰지 않습니다.
+  // 물리적으로 스택을 한 칸 제거하여 이전 단계로 돌아갑니다.
+  const handleBack = () => {
+    // 브라우저 히스토리에서 현재 단계(Step)를 제거합니다.
+    router.back();
+
+    // 참고: URL이 이전 상태(이전 step과 이전 데이터)로 돌아가면,
+    // nuqs가 자동으로 이를 감지하여 step, cityId, foodId 변수를 업데이트합니다.
+    // 따라서 별도의 상태 초기화 코드가 필요 없습니다.
   };
 
   // 새 검색 시작
   const handleNewSearch = () => {
-    setCityId(null);
-    setFoodId(null);
+    // 새 검색은 완전히 새로운 맥락이므로 초기화
+    setCityId(null, { history: 'replace' });
+    setFoodId(null, { history: 'replace' });
     setSelectedPriorities(null);
-    setStep('city'); // 첫 단계로 초기화
+    setStep('city');
   };
 
   return {
     step,
-    next,
-    prev,
     data: {
       selectedCity,
       selectedFood,
@@ -108,6 +127,7 @@ export function useSearchFlow() {
       handlePriorityComplete,
       handleNewSearch,
       handleNext,
+      handleBack,
     },
     status: {
       isCreatingCity,

@@ -29,7 +29,7 @@ const createInitialProgressState = (): RecommendationProgressState => ({
  */
 export default function Home() {
   // 검색 플로우 관리 (URL 동기화 포함)
-  const { step, prev, data, handlers, status } = useSearchFlow();
+  const { step, data, handlers, status } = useSearchFlow();
   const { selectedCity, selectedFood, selectedPriorities } = data;
 
   // Results 단계 전용 상태 (나중에 useRecommendationFlow로 분리 예정)
@@ -93,7 +93,7 @@ export default function Home() {
       // results 단계에서 뒤로가기 시 progress state 초기화
       setProgressState(createInitialProgressState());
     }
-    prev();
+    handlers.handleBack();
   };
 
   // 새 검색 시작
