@@ -27,7 +27,7 @@ export function useFood(city: City | null, enabled: boolean) {
  * @param cityId - 선택된 도시 ID (localFoods 조회용)
  * @param foodId - URL에서 가져온 food ID
  * @param enabled - localFoods 패칭 활성화 여부 (food step일 때만 true)
- * @returns Food 객체 또는 null (찾을 수 없을 경우)
+ * @returns Food 객체 또는 null (찾을 수 없을 경우), isLoading 상태
  */
 export function useFoodFromCache(
   cityId: string | null,
@@ -35,10 +35,14 @@ export function useFoodFromCache(
   enabled: boolean = false
 ) {
   // cityId로부터 City 객체 복원 (localFoods 조회용)
-  const selectedCity = useCityFromCache(cityId);
+  const { city: selectedCity, isLoading: isLoadingCity } =
+    useCityFromCache(cityId);
 
   // localFoods 조회 (enabled가 true일 때만 패칭)
-  const { localFoods } = useFood(selectedCity, enabled && !!cityId);
+  const { localFoods, isLoadingFoods } = useFood(
+    selectedCity,
+    enabled && !!cityId
+  );
 
   // foodId로 Food 객체 찾기
   const food = useMemo(() => {
@@ -61,5 +65,11 @@ export function useFoodFromCache(
     return null;
   }, [foodId, localFoods]);
 
-  return food;
+  // City 로딩 중이거나 Food 로딩 중이면 로딩 상태
+  const isLoading = isLoadingCity || (enabled && !!cityId && isLoadingFoods);
+
+  return {
+    food,
+    isLoading,
+  };
 }

@@ -40,12 +40,12 @@ export function useCity() {
  * URL의 cityId로 React Query 캐시에서 City 객체를 복원하는 훅
  * 캐시에 없으면 서버에서 조회하여 새로고침 시에도 데이터 복구 가능
  * @param cityId - URL에서 가져온 city ID
- * @returns City 객체 또는 null (서버에도 없을 경우)
+ * @returns City 객체 또는 null (서버에도 없을 경우), isLoading 상태
  */
 export function useCityFromCache(cityId: string | null) {
   const queryClient = useQueryClient();
 
-  const { data: city } = useQuery({
+  const { data: city, isLoading } = useQuery({
     queryKey: ['city', cityId],
     queryFn: async () => {
       if (!cityId) return null;
@@ -57,8 +57,14 @@ export function useCityFromCache(cityId: string | null) {
       }
 
       // 2. 캐시에 없으면 서버에서 조회 (새로고침 대비)
+      // 단, DB에 없는 city(404)는 정상적인 경우이므로 에러를 무시하고 null 반환
+      // (사용자가 Continue 버튼을 클릭할 때 createOrGetCity에서 서버에 저장됨)
       try {
         const response = await cityService().getCity(cityId);
+        // 404 응답 (NOT_FOUND)은 정상적인 경우 (DB에 없는 city)
+        if (!response.success && response.error === 'NOT_FOUND') {
+          return null;
+        }
         if (response.success && response.data) {
           // 서버에서 가져온 데이터를 캐시에 저장
           queryClient.setQueryData(['city', cityId], response.data);
@@ -66,6 +72,7 @@ export function useCityFromCache(cityId: string | null) {
         }
         return null;
       } catch (error) {
+        // 예상치 못한 에러만 로그에 남기고 null 반환
         console.error('Failed to fetch city on restore:', error);
         return null;
       }
@@ -75,5 +82,8 @@ export function useCityFromCache(cityId: string | null) {
     gcTime: 1000 * 60 * 60, // 1시간 동안 캐시 유지
   });
 
-  return city ?? null;
+  return {
+    city: city ?? null,
+    isLoading,
+  };
 }

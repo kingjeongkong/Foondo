@@ -3,7 +3,7 @@ import type { Food } from '@/app/types/food';
 import type { PrioritySettings } from '@/app/types/search';
 import { useRouter } from 'next/navigation';
 import { useQueryState } from 'nuqs';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCity, useCityFromCache } from './useCity';
 import { useFoodFromCache } from './useFood';
 import { useFunnel } from './useFunnel';
@@ -21,10 +21,16 @@ export function useSearchFlow() {
   const [cityId, setCityId] = useQueryState('cityId');
   const [foodId, setFoodId] = useQueryState('foodId');
 
-  // URL에서 데이터 복원
-  const selectedCity = useCityFromCache(cityId);
+  // URL에서 데이터 복원 (서버에서 가져온 데이터)
+  const { city: cityFromCache, isLoading: isLoadingCity } =
+    useCityFromCache(cityId);
+  // 임시 City 저장 (사용자가 선택한 City 객체, DB에 없을 수 있음)
+  const [selectedCityState, setSelectedCityState] = useState<City | null>(null);
+  // 우선순위 병합: 서버 데이터 우선, 없으면 임시 저장된 데이터 사용
+  const selectedCity = cityFromCache ?? selectedCityState;
+
   // food step일 때만 localFoods 패칭 (COMMON_FOODS는 항상 사용 가능)
-  const selectedFood = useFoodFromCache(
+  const { food: selectedFood, isLoading: isLoadingFood } = useFoodFromCache(
     cityId,
     foodId,
     ['food', 'priority', 'results'].includes(step)
@@ -37,10 +43,19 @@ export function useSearchFlow() {
   // City 관련 로직
   const { createOrGetCity, isCreatingCity, getCachedCity } = useCity();
 
+  // 서버에서 City 데이터가 복원되면 임시 저장 제거 (서버 데이터 우선 사용)
+  useEffect(() => {
+    if (cityFromCache) {
+      setSelectedCityState(null);
+    }
+  }, [cityFromCache]);
+
   // City 선택 핸들러 (선택만 처리, API 호출은 handleNext에서)
   const handleCitySelect = (city: City) => {
     // URL에 cityId만 저장 (history: 'replace'로 같은 step 내에서의 선택 변경은 히스토리에 쌓지 않음)
     setCityId(city.id, { history: 'replace' });
+    // 임시 저장 (DB에 없을 수 있는 새로운 City도 UI에 즉시 반영)
+    setSelectedCityState(city);
   };
 
   // Food 선택 핸들러 (선택만 처리, next는 별도)
@@ -109,6 +124,7 @@ export function useSearchFlow() {
     setCityId(null, { history: 'replace' });
     setFoodId(null, { history: 'replace' });
     setSelectedPriorities(null);
+    setSelectedCityState(null); // 임시 저장도 초기화
     setStep('city');
   };
 
@@ -131,6 +147,8 @@ export function useSearchFlow() {
     },
     status: {
       isCreatingCity,
+      isLoadingCity,
+      isLoadingFood,
     },
   };
 }

@@ -127,7 +127,23 @@ export default function Home() {
     },
   ];
 
+  const loadingIndicator = () => {
+    return (
+      <div className="restaurant-card w-full max-w-3xl border border-white/40 rounded-2xl p-8">
+        <div className="flex flex-col items-center justify-center gap-4 py-12">
+          <div className="ai-loader w-8 h-8" />
+          <p className="text-sm text-gray-500">Loading city and food data...</p>
+        </div>
+      </div>
+    );
+  };
+
   const renderStepCard = () => {
+    const isLoading = status.isLoadingCity || status.isLoadingFood;
+    if (isLoading) {
+      return loadingIndicator();
+    }
+
     if (step === 'city') {
       return (
         <CitySelector
