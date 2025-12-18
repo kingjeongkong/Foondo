@@ -21,15 +21,8 @@ const createInitialProgressState = (): RecommendationProgressState => ({
  * Recommendations fetch 및 progress 상태 관리를 담당합니다.
  * @param city - 선택된 도시
  * @param food - 선택된 음식
- * @param priorities - 선택된 우선순위 설정
- * @param enabled - recommendations fetch 활성화 여부 (step === 'results'일 때만 true)
  */
-export function useRecommendationFlow(
-  city: City | null,
-  food: Food | null,
-  priorities: PrioritySettings | null,
-  enabled: boolean = false
-) {
+export function useRecommendationFlow(city: City | null, food: Food | null) {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [recommendationError, setRecommendationError] = useState<Error | null>(
     null

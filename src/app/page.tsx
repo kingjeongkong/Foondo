@@ -9,12 +9,30 @@ import { useSearchFlow } from '@/app/hooks/useSearchFlow';
 import type { PrioritySettings } from '@/app/types/search';
 import { FunnelComponent } from '@/components/common/Funnel';
 import { ProgressPanel } from '@/components/common/ProgressPanel';
+import { Suspense } from 'react';
 
-/**
- * 메인 페이지 컴포넌트
- * AI 기반 맛집 추천 시스템의 진입점
- */
-export default function Home() {
+// 앱 헤더 컴포넌트
+function AppHeader() {
+  return (
+    <header className="app-header">
+      <div>
+        <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
+          Foondo AI
+        </p>
+        <p className="app-brand">Culinary Intelligence Suite</p>
+      </div>
+      <div className="flex items-center gap-3 text-sm text-gray-500">
+        <span className="hidden sm:inline">Need help?</span>
+        <button className="rounded-full border border-gray-200 px-4 py-1.5 hover:border-gray-300 transition">
+          Contact Support
+        </button>
+      </div>
+    </header>
+  );
+}
+
+// 메인 페이지 컴포넌트
+function HomeContent() {
   // 검색 플로우 관리 (URL 동기화 포함)
   const { step, data, handlers, status } = useSearchFlow();
   const { selectedCity, selectedFood, selectedPriorities } = data;
@@ -27,12 +45,7 @@ export default function Home() {
     isLoading: isGettingRecommendations,
     handlePriorityComplete: handleRecommendationComplete,
     reset: resetRecommendations,
-  } = useRecommendationFlow(
-    selectedCity,
-    selectedFood,
-    selectedPriorities,
-    step === 'results'
-  );
+  } = useRecommendationFlow(selectedCity, selectedFood);
 
   // Priority 완료 핸들러 (step 이동 + Recommendations fetch)
   const handlePriorityComplete = async (priorities: PrioritySettings) => {
@@ -62,93 +75,100 @@ export default function Home() {
   const isLoading = status.isLoadingCity || status.isLoadingFood;
 
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
-            Foondo AI
-          </p>
-          <p className="app-brand">Culinary Intelligence Suite</p>
-        </div>
-        <div className="flex items-center gap-3 text-sm text-gray-500">
-          <span className="hidden sm:inline">Need help?</span>
-          <button className="rounded-full border border-gray-200 px-4 py-1.5 hover:border-gray-300 transition">
-            Contact Support
-          </button>
-        </div>
-      </header>
+    <div className="container mx-auto px-4 py-8 lg:py-12">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+        <ProgressPanel
+          currentStep={step}
+          selectedCity={selectedCity}
+          selectedFood={selectedFood}
+          selectedPriorities={selectedPriorities}
+        />
 
-      <div className="container mx-auto px-4 py-8 lg:py-12">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-          <ProgressPanel
-            currentStep={step}
-            selectedCity={selectedCity}
-            selectedFood={selectedFood}
-            selectedPriorities={selectedPriorities}
-          />
-
-          <main className="flex-1 min-w-0">
-            <div className="flex justify-start w-full">
-              {isLoading ? (
-                <div className="restaurant-card w-full max-w-3xl border border-white/40 rounded-2xl p-8">
-                  <div className="flex flex-col items-center justify-center gap-4 py-12">
-                    <div className="ai-loader w-8 h-8" />
-                    <p className="text-sm text-gray-500">
-                      Loading city and food data...
-                    </p>
-                  </div>
+        <main className="flex-1 min-w-0">
+          <div className="flex justify-start w-full">
+            {isLoading ? (
+              <div className="restaurant-card w-full max-w-3xl border border-white/40 rounded-2xl p-8">
+                <div className="flex flex-col items-center justify-center gap-4 py-12">
+                  <div className="ai-loader w-8 h-8" />
+                  <p className="text-sm text-gray-500">
+                    Loading city and food data...
+                  </p>
                 </div>
-              ) : (
-                <FunnelComponent step={step}>
-                  <FunnelComponent.Step name="city">
-                    <CitySelector
-                      onCitySelect={handlers.handleCitySelect}
-                      onNext={handlers.handleNext}
+              </div>
+            ) : (
+              <FunnelComponent step={step}>
+                <FunnelComponent.Step name="city">
+                  <CitySelector
+                    onCitySelect={handlers.handleCitySelect}
+                    onNext={handlers.handleNext}
+                    selectedCity={selectedCity}
+                    isLoading={status.isCreatingCity}
+                  />
+                </FunnelComponent.Step>
+
+                {selectedCity && (
+                  <FunnelComponent.Step name="food">
+                    <FoodSelector
                       selectedCity={selectedCity}
-                      isLoading={status.isCreatingCity}
-                    />
-                  </FunnelComponent.Step>
-
-                  {selectedCity && (
-                    <FunnelComponent.Step name="food">
-                      <FoodSelector
-                        selectedCity={selectedCity}
-                        selectedFood={selectedFood}
-                        onFoodSelect={handlers.handleFoodSelect}
-                        onNext={handlers.handleNext}
-                        onBack={handleBack}
-                      />
-                    </FunnelComponent.Step>
-                  )}
-
-                  {selectedCity && selectedFood && (
-                    <FunnelComponent.Step name="priority">
-                      <PrioritySelector
-                        onComplete={handlePriorityComplete}
-                        onBack={handleBack}
-                      />
-                    </FunnelComponent.Step>
-                  )}
-
-                  <FunnelComponent.Step name="results">
-                    <RecommendationsResult
-                      city={selectedCity}
-                      food={selectedFood}
-                      priorities={selectedPriorities}
-                      recommendations={recommendations}
-                      isLoading={isGettingRecommendations}
-                      error={recommendationError}
+                      selectedFood={selectedFood}
+                      onFoodSelect={handlers.handleFoodSelect}
+                      onNext={handlers.handleNext}
                       onBack={handleBack}
-                      onNewSearch={handleNewSearch}
-                      progress={progressState}
                     />
                   </FunnelComponent.Step>
-                </FunnelComponent>
-              )}
-            </div>
-          </main>
-        </div>
+                )}
+
+                {selectedCity && selectedFood && (
+                  <FunnelComponent.Step name="priority">
+                    <PrioritySelector
+                      onComplete={handlePriorityComplete}
+                      onBack={handleBack}
+                    />
+                  </FunnelComponent.Step>
+                )}
+
+                <FunnelComponent.Step name="results">
+                  <RecommendationsResult
+                    city={selectedCity}
+                    food={selectedFood}
+                    priorities={selectedPriorities}
+                    recommendations={recommendations}
+                    isLoading={isGettingRecommendations}
+                    error={recommendationError}
+                    onBack={handleBack}
+                    onNewSearch={handleNewSearch}
+                    progress={progressState}
+                  />
+                </FunnelComponent.Step>
+              </FunnelComponent>
+            )}
+          </div>
+        </main>
       </div>
+    </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <div className="app-shell">
+      <AppHeader />
+      <Suspense
+        fallback={
+          <div className="container mx-auto px-4 py-8 lg:py-12">
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+              <div className="restaurant-card w-full max-w-3xl border border-white/40 rounded-2xl p-8">
+                <div className="flex flex-col items-center justify-center gap-4 py-12">
+                  <div className="ai-loader w-8 h-8" />
+                  <p className="text-sm text-gray-500">Loading...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      >
+        <HomeContent />
+      </Suspense>
     </div>
   );
 }
