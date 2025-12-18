@@ -30,10 +30,11 @@ export function useSearchFlow() {
   const selectedCity = cityFromCache ?? selectedCityState;
 
   // food step일 때만 localFoods 패칭 (COMMON_FOODS는 항상 사용 가능)
+  const shouldFetchFood = ['food', 'priority', 'results'].includes(step);
   const { food: selectedFood, isLoading: isLoadingFood } = useFoodFromCache(
     cityId,
     foodId,
-    ['food', 'priority', 'results'].includes(step)
+    shouldFetchFood
   );
 
   // Priority는 URL에 저장하지 않음 (복잡한 객체이므로)
@@ -147,8 +148,11 @@ export function useSearchFlow() {
     },
     status: {
       isCreatingCity,
-      isLoadingCity,
-      isLoadingFood,
+      // selectedCityState가 있으면 사용자가 방금 선택한 도시이므로 서버 조회 로딩 상태를 무시
+      isLoadingCity: selectedCityState ? false : isLoadingCity,
+      // city step이 아니거나, selectedCityState가 있으면 food 로딩 상태 무시
+      isLoadingFood:
+        shouldFetchFood && !selectedCityState ? isLoadingFood : false,
     },
   };
 }
