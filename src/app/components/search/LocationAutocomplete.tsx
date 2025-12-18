@@ -19,6 +19,7 @@ export interface LocationAutocompleteProps {
   ) => void;
   error?: string;
   disabled?: boolean;
+  selectedCity?: string; // 외부에서 초기값 설정 (selectedCity가 있을 때 사용)
 }
 
 /**
@@ -31,12 +32,20 @@ export default function LocationAutocomplete({
   onSelect,
   error,
   disabled = false,
+  selectedCity = '',
 }: LocationAutocompleteProps) {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState(selectedCity);
   const [suggestions, setSuggestions] = useState<MapboxSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const isSuggestionClicked = useRef(false);
+
+  // 외부에서 value prop이 변경되면 inputValue 업데이트
+  useEffect(() => {
+    if (selectedCity !== undefined && selectedCity !== inputValue) {
+      setInputValue(selectedCity);
+    }
+  }, [selectedCity]);
 
   // 검색 디바운싱 (400ms)
   useEffect(() => {
