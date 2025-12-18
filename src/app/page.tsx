@@ -7,6 +7,7 @@ import { PrioritySelector } from '@/app/components/search/PrioritySelector';
 import { useRecommendationFlow } from '@/app/hooks/useRecommendationFlow';
 import { useSearchFlow } from '@/app/hooks/useSearchFlow';
 import type { PrioritySettings } from '@/app/types/search';
+import { FunnelComponent } from '@/components/common/Funnel';
 import { ProgressPanel } from '@/components/common/ProgressPanel';
 
 /**
@@ -58,73 +59,7 @@ export default function Home() {
     resetRecommendations();
   };
 
-  const loadingIndicator = () => {
-    return (
-      <div className="restaurant-card w-full max-w-3xl border border-white/40 rounded-2xl p-8">
-        <div className="flex flex-col items-center justify-center gap-4 py-12">
-          <div className="ai-loader w-8 h-8" />
-          <p className="text-sm text-gray-500">Loading city and food data...</p>
-        </div>
-      </div>
-    );
-  };
-
-  const renderStepCard = () => {
-    const isLoading = status.isLoadingCity || status.isLoadingFood;
-    if (isLoading) {
-      return loadingIndicator();
-    }
-
-    if (step === 'city') {
-      return (
-        <CitySelector
-          onCitySelect={handlers.handleCitySelect}
-          onNext={handlers.handleNext}
-          selectedCity={selectedCity}
-          isLoading={status.isCreatingCity}
-        />
-      );
-    }
-
-    if (step === 'food' && selectedCity) {
-      return (
-        <FoodSelector
-          selectedCity={selectedCity}
-          selectedFood={selectedFood}
-          onFoodSelect={handlers.handleFoodSelect}
-          onNext={handlers.handleNext}
-          onBack={handleBack}
-        />
-      );
-    }
-
-    if (step === 'priority' && selectedCity && selectedFood) {
-      return (
-        <PrioritySelector
-          onComplete={handlePriorityComplete}
-          onBack={handleBack}
-        />
-      );
-    }
-
-    if (step === 'results') {
-      return (
-        <RecommendationsResult
-          city={selectedCity}
-          food={selectedFood}
-          priorities={selectedPriorities}
-          recommendations={recommendations}
-          isLoading={isGettingRecommendations}
-          error={recommendationError}
-          onBack={handleBack}
-          onNewSearch={handleNewSearch}
-          progress={progressState}
-        />
-      );
-    }
-
-    return null;
-  };
+  const isLoading = status.isLoadingCity || status.isLoadingFood;
 
   return (
     <div className="app-shell">
@@ -153,7 +88,64 @@ export default function Home() {
           />
 
           <main className="flex-1 min-w-0">
-            <div className="flex justify-start w-full">{renderStepCard()}</div>
+            <div className="flex justify-start w-full">
+              {isLoading ? (
+                <div className="restaurant-card w-full max-w-3xl border border-white/40 rounded-2xl p-8">
+                  <div className="flex flex-col items-center justify-center gap-4 py-12">
+                    <div className="ai-loader w-8 h-8" />
+                    <p className="text-sm text-gray-500">
+                      Loading city and food data...
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <FunnelComponent step={step}>
+                  <FunnelComponent.Step name="city">
+                    <CitySelector
+                      onCitySelect={handlers.handleCitySelect}
+                      onNext={handlers.handleNext}
+                      selectedCity={selectedCity}
+                      isLoading={status.isCreatingCity}
+                    />
+                  </FunnelComponent.Step>
+
+                  {selectedCity && (
+                    <FunnelComponent.Step name="food">
+                      <FoodSelector
+                        selectedCity={selectedCity}
+                        selectedFood={selectedFood}
+                        onFoodSelect={handlers.handleFoodSelect}
+                        onNext={handlers.handleNext}
+                        onBack={handleBack}
+                      />
+                    </FunnelComponent.Step>
+                  )}
+
+                  {selectedCity && selectedFood && (
+                    <FunnelComponent.Step name="priority">
+                      <PrioritySelector
+                        onComplete={handlePriorityComplete}
+                        onBack={handleBack}
+                      />
+                    </FunnelComponent.Step>
+                  )}
+
+                  <FunnelComponent.Step name="results">
+                    <RecommendationsResult
+                      city={selectedCity}
+                      food={selectedFood}
+                      priorities={selectedPriorities}
+                      recommendations={recommendations}
+                      isLoading={isGettingRecommendations}
+                      error={recommendationError}
+                      onBack={handleBack}
+                      onNewSearch={handleNewSearch}
+                      progress={progressState}
+                    />
+                  </FunnelComponent.Step>
+                </FunnelComponent>
+              )}
+            </div>
           </main>
         </div>
       </div>
