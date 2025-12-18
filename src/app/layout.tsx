@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { useState } from 'react';
 import './globals.css';
 
@@ -27,9 +28,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
+        <NuqsAdapter>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </NuqsAdapter>
       </body>
     </html>
   );

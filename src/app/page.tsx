@@ -4,329 +4,171 @@ import { RecommendationsResult } from '@/app/components/results/RecommendationsR
 import { CitySelector } from '@/app/components/search/CitySelector';
 import { FoodSelector } from '@/app/components/search/FoodSelector';
 import { PrioritySelector } from '@/app/components/search/PrioritySelector';
-import { useCity } from '@/app/hooks/useCity';
-import { useFood } from '@/app/hooks/useFood';
-import { useRecommendation } from '@/app/hooks/useRecommendation';
-import type { City, CreateCityRequest } from '@/app/types/city';
-import type { Food } from '@/app/types/food';
-import type {
-  Recommendation,
-  RecommendationProgressEvent,
-  RecommendationProgressState,
-} from '@/app/types/recommendations';
+import { useRecommendationFlow } from '@/app/hooks/useRecommendationFlow';
+import { useSearchFlow } from '@/app/hooks/useSearchFlow';
 import type { PrioritySettings } from '@/app/types/search';
-import { useCallback, useState } from 'react';
+import { FunnelComponent } from '@/components/common/Funnel';
+import { ProgressPanel } from '@/components/common/ProgressPanel';
+import { Suspense } from 'react';
 
-const createInitialProgressState = (): RecommendationProgressState => ({
-  SEARCH_RESTAURANTS: { status: 'pending' },
-  COLLECT_REVIEWS: { status: 'pending' },
-  ANALYZE_REPORTS: { status: 'pending' },
-  CALCULATE_SCORES: { status: 'pending' },
-});
-
-/**
- * 메인 페이지 컴포넌트
- * AI 기반 맛집 추천 시스템의 진입점
- */
-export default function Home() {
-  const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [selectedFood, setSelectedFood] = useState<Food | null>(null);
-  const [selectedPriorities, setSelectedPriorities] =
-    useState<PrioritySettings | null>(null);
-  const [currentStep, setCurrentStep] = useState<
-    'city' | 'food' | 'priority' | 'results'
-  >('city');
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [recommendationError, setRecommendationError] = useState<Error | null>(
-    null
+// 앱 헤더 컴포넌트
+function AppHeader() {
+  return (
+    <header className="app-header">
+      <div>
+        <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
+          Foondo AI
+        </p>
+        <p className="app-brand">Culinary Intelligence Suite</p>
+      </div>
+      <div className="flex items-center gap-3 text-sm text-gray-500">
+        <span className="hidden sm:inline">Need help?</span>
+        <button className="rounded-full border border-gray-200 px-4 py-1.5 hover:border-gray-300 transition">
+          Contact Support
+        </button>
+      </div>
+    </header>
   );
-  const [progressState, setProgressState] =
-    useState<RecommendationProgressState>(() => createInitialProgressState());
+}
 
-  const { createOrGetCity, isCreatingCity, getCachedCity } = useCity();
-  const { localFoods, isLoadingFoods } = useFood(
-    selectedCity,
-    currentStep === 'food'
-  );
-  const { getRecommendations, isGettingRecommendations } = useRecommendation();
+// 메인 페이지 컴포넌트
+function HomeContent() {
+  // 검색 플로우 관리 (URL 동기화 포함)
+  const { step, data, handlers, status } = useSearchFlow();
+  const { selectedCity, selectedFood, selectedPriorities } = data;
 
-  const handleCitySelect = (city: City) => {
-    setSelectedCity(city);
-  };
+  // Results 단계 전용 훅
+  const {
+    recommendations,
+    recommendationError,
+    progressState,
+    isLoading: isGettingRecommendations,
+    handlePriorityComplete: handleRecommendationComplete,
+    reset: resetRecommendations,
+  } = useRecommendationFlow(selectedCity, selectedFood);
 
-  const handleFoodSelect = (food: Food) => {
-    setSelectedFood(food);
-  };
-
-  const handleProgressUpdate = useCallback(
-    (event: RecommendationProgressEvent) => {
-      setProgressState((prev) => ({
-        ...prev,
-        [event.step]: {
-          status: event.status,
-          meta: event.meta,
-          message: event.message,
-        },
-      }));
-    },
-    []
-  );
-
+  // Priority 완료 핸들러 (step 이동 + Recommendations fetch)
   const handlePriorityComplete = async (priorities: PrioritySettings) => {
-    setSelectedPriorities(priorities);
-    setCurrentStep('results');
-    setRecommendationError(null);
-    setProgressState(createInitialProgressState());
-
+    // useSearchFlow의 handlePriorityComplete 호출 (step 이동)
+    handlers.handlePriorityComplete(priorities);
+    // useRecommendationFlow의 handlePriorityComplete 호출 (recommendations fetch)
     if (selectedCity && selectedFood) {
-      try {
-        const result = await getRecommendations({
-          request: {
-            city: selectedCity,
-            food: selectedFood,
-            priorities,
-          },
-          onProgress: handleProgressUpdate,
-        });
-        setRecommendations(result.data.recommendations);
-        setRecommendationError(null);
-      } catch (error) {
-        setRecommendationError(error as Error);
-        setRecommendations([]);
-      }
+      await handleRecommendationComplete(priorities);
     }
   };
 
-  const handleNext = async () => {
-    if (currentStep === 'city') {
-      if (!selectedCity) {
-        return;
-      }
-
-      // 캐시 확인 (이미 요청한 적이 있는 경우)
-      const cachedCity = getCachedCity(selectedCity.id);
-      if (cachedCity) {
-        // 캐시에 있으면 바로 다음 단계로
-        setCurrentStep('food');
-        return;
-      }
-
-      // POST 요청 (서버에서 존재하면 반환, 없으면 생성)
-      const requestData: CreateCityRequest = {
-        id: selectedCity.id,
-        name: selectedCity.name,
-        country: selectedCity.country ?? '',
-      };
-      await createOrGetCity(requestData);
-      setCurrentStep('food');
-    } else if (currentStep === 'food') {
-      setCurrentStep('priority');
-    }
-  };
-
+  // 뒤로가기 핸들러
   const handleBack = () => {
-    if (currentStep === 'food') {
-      setCurrentStep('city');
-      setSelectedCity(null);
-    } else if (currentStep === 'priority') {
-      setCurrentStep('food');
-    } else if (currentStep === 'results') {
-      setCurrentStep('priority');
-      setProgressState(createInitialProgressState());
+    if (step === 'results') {
+      // results 단계에서 뒤로가기 시 recommendations 상태 초기화
+      resetRecommendations();
     }
+    handlers.handleBack();
   };
 
+  // 새 검색 시작
   const handleNewSearch = () => {
-    setSelectedCity(null);
-    setSelectedFood(null);
-    setSelectedPriorities(null);
-    setRecommendations([]);
-    setRecommendationError(null);
-    setProgressState(createInitialProgressState());
-    setCurrentStep('city');
+    handlers.handleNewSearch();
+    resetRecommendations();
   };
 
-  // 단계 진행 상태 계산
-  const stepOrder: Array<typeof currentStep> = [
-    'city',
-    'food',
-    'priority',
-    'results',
-  ];
-  const currentStepIndex = stepOrder.indexOf(currentStep);
-
-  const steps = [
-    {
-      key: 'city' as const,
-      label: 'City Selection',
-      description: 'Choose your destination',
-    },
-    {
-      key: 'food' as const,
-      label: 'Food Preferences',
-      description: 'Pick a cuisine focus',
-    },
-    {
-      key: 'priority' as const,
-      label: 'Personalize Priorities',
-      description: 'Rank what matters most',
-    },
-    {
-      key: 'results' as const,
-      label: 'Recommendations',
-      description: 'Review curated spots',
-    },
-  ];
-
-  const renderStepCard = () => {
-    if (currentStep === 'city') {
-      return (
-        <CitySelector
-          onCitySelect={handleCitySelect}
-          onNext={handleNext}
-          selectedCity={selectedCity}
-          isLoading={isCreatingCity}
-        />
-      );
-    }
-
-    if (currentStep === 'food' && selectedCity) {
-      return (
-        <FoodSelector
-          localFoods={localFoods}
-          selectedCity={selectedCity}
-          selectedFood={selectedFood}
-          onFoodSelect={handleFoodSelect}
-          onNext={handleNext}
-          onBack={handleBack}
-          isLoading={isLoadingFoods}
-        />
-      );
-    }
-
-    if (currentStep === 'priority' && selectedCity && selectedFood) {
-      return (
-        <PrioritySelector
-          onComplete={handlePriorityComplete}
-          onBack={handleBack}
-        />
-      );
-    }
-
-    if (currentStep === 'results') {
-      return (
-        <RecommendationsResult
-          city={selectedCity}
-          food={selectedFood}
-          priorities={selectedPriorities}
-          recommendations={recommendations}
-          isLoading={isGettingRecommendations}
-          error={recommendationError}
-          onBack={handleBack}
-          onNewSearch={handleNewSearch}
-          progress={progressState}
-        />
-      );
-    }
-
-    return null;
-  };
+  const isLoading = status.isLoadingCity || status.isLoadingFood;
 
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
-            Foondo AI
-          </p>
-          <p className="app-brand">Culinary Intelligence Suite</p>
-        </div>
-        <div className="flex items-center gap-3 text-sm text-gray-500">
-          <span className="hidden sm:inline">Need help?</span>
-          <button className="rounded-full border border-gray-200 px-4 py-1.5 hover:border-gray-300 transition">
-            Contact Support
-          </button>
-        </div>
-      </header>
+    <div className="container mx-auto px-4 py-8 lg:py-12">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+        <ProgressPanel
+          currentStep={step}
+          selectedCity={selectedCity}
+          selectedFood={selectedFood}
+          selectedPriorities={selectedPriorities}
+        />
 
-      <div className="container mx-auto px-4 py-8 lg:py-12">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-          <aside className="progress-panel space-y-5 shrink-0">
-            <div>
-              <p className="text-sm text-gray-500">Progress</p>
-              <p className="text-xl font-semibold text-gray-900">
-                Guided AI workflow
-              </p>
-            </div>
-            <div className="space-y-3">
-              {steps.map((step, index) => {
-                const status =
-                  index < currentStepIndex
-                    ? 'complete'
-                    : index === currentStepIndex
-                      ? 'current'
-                      : 'upcoming';
+        <main className="flex-1 min-w-0">
+          <div className="flex justify-start w-full">
+            {isLoading ? (
+              <div className="restaurant-card w-full max-w-3xl border border-white/40 rounded-2xl p-8">
+                <div className="flex flex-col items-center justify-center gap-4 py-12">
+                  <div className="ai-loader w-8 h-8" />
+                  <p className="text-sm text-gray-500">
+                    Loading city and food data...
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <FunnelComponent step={step}>
+                <FunnelComponent.Step name="city">
+                  <CitySelector
+                    onCitySelect={handlers.handleCitySelect}
+                    onNext={handlers.handleNext}
+                    selectedCity={selectedCity}
+                    isLoading={status.isCreatingCity}
+                  />
+                </FunnelComponent.Step>
 
-                return (
-                  <div
-                    key={step.key}
-                    className={`progress-pill ${
-                      status === 'current' ? 'progress-pill-active' : ''
-                    }`}
-                  >
-                    <span
-                      className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
-                        status === 'complete'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                      style={
-                        status === 'current'
-                          ? {
-                              backgroundColor: 'var(--color-primary-100)',
-                              color: 'var(--color-primary-600)',
-                            }
-                          : undefined
-                      }
-                    >
-                      {index + 1}
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-gray-900">
-                        {step.label}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {step.description}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                {selectedCity && (
+                  <FunnelComponent.Step name="food">
+                    <FoodSelector
+                      selectedCity={selectedCity}
+                      selectedFood={selectedFood}
+                      onFoodSelect={handlers.handleFoodSelect}
+                      onNext={handlers.handleNext}
+                      onBack={handleBack}
+                    />
+                  </FunnelComponent.Step>
+                )}
 
-            <div className="rounded-2xl border border-dashed border-gray-200 p-4 text-sm text-gray-600">
-              <p className="font-semibold text-gray-900 mb-1">
-                Session summary
-              </p>
-              <p>City: {selectedCity?.name ?? 'Not selected'}</p>
-              <p>Food: {selectedFood?.name ?? 'Not selected'}</p>
-              <p>
-                Priorities:{' '}
-                {selectedPriorities
-                  ? Object.values(selectedPriorities)
-                      .map((priority) => priority?.name)
-                      .filter(Boolean)
-                      .join(', ')
-                  : 'Not selected'}
-              </p>
-            </div>
-          </aside>
+                {selectedCity && selectedFood && (
+                  <FunnelComponent.Step name="priority">
+                    <PrioritySelector
+                      onComplete={handlePriorityComplete}
+                      onBack={handleBack}
+                    />
+                  </FunnelComponent.Step>
+                )}
 
-          <main className="flex-1 min-w-0">
-            <div className="flex justify-start w-full">{renderStepCard()}</div>
-          </main>
-        </div>
+                <FunnelComponent.Step name="results">
+                  <RecommendationsResult
+                    city={selectedCity}
+                    food={selectedFood}
+                    priorities={selectedPriorities}
+                    recommendations={recommendations}
+                    isLoading={isGettingRecommendations}
+                    error={recommendationError}
+                    onBack={handleBack}
+                    onNewSearch={handleNewSearch}
+                    progress={progressState}
+                  />
+                </FunnelComponent.Step>
+              </FunnelComponent>
+            )}
+          </div>
+        </main>
       </div>
+    </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <div className="app-shell">
+      <AppHeader />
+      <Suspense
+        fallback={
+          <div className="container mx-auto px-4 py-8 lg:py-12">
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+              <div className="restaurant-card w-full max-w-3xl border border-white/40 rounded-2xl p-8">
+                <div className="flex flex-col items-center justify-center gap-4 py-12">
+                  <div className="ai-loader w-8 h-8" />
+                  <p className="text-sm text-gray-500">Loading...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      >
+        <HomeContent />
+      </Suspense>
     </div>
   );
 }
