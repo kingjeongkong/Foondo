@@ -4,24 +4,10 @@ import { RecommendationsResult } from '@/app/components/results/RecommendationsR
 import { CitySelector } from '@/app/components/search/CitySelector';
 import { FoodSelector } from '@/app/components/search/FoodSelector';
 import { PrioritySelector } from '@/app/components/search/PrioritySelector';
-import { useFood } from '@/app/hooks/useFood';
-import { useRecommendation } from '@/app/hooks/useRecommendation';
+import { useRecommendationFlow } from '@/app/hooks/useRecommendationFlow';
 import { useSearchFlow } from '@/app/hooks/useSearchFlow';
-import type {
-  Recommendation,
-  RecommendationProgressEvent,
-  RecommendationProgressState,
-} from '@/app/types/recommendations';
 import type { PrioritySettings } from '@/app/types/search';
 import { ProgressPanel } from '@/components/common/ProgressPanel';
-import { useCallback, useState } from 'react';
-
-const createInitialProgressState = (): RecommendationProgressState => ({
-  SEARCH_RESTAURANTS: { status: 'pending' },
-  COLLECT_REVIEWS: { status: 'pending' },
-  ANALYZE_REPORTS: { status: 'pending' },
-  CALCULATE_SCORES: { status: 'pending' },
-});
 
 /**
  * 메인 페이지 컴포넌트
@@ -32,66 +18,36 @@ export default function Home() {
   const { step, data, handlers, status } = useSearchFlow();
   const { selectedCity, selectedFood, selectedPriorities } = data;
 
-  // Results 단계 전용 상태 (나중에 useRecommendationFlow로 분리 예정)
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [recommendationError, setRecommendationError] = useState<Error | null>(
-    null
-  );
-  const [progressState, setProgressState] =
-    useState<RecommendationProgressState>(() => createInitialProgressState());
-
-  // Food 데이터 fetching (FoodSelector에서 사용)
-  const { localFoods, isLoadingFoods } = useFood(selectedCity, step === 'food');
-  const { getRecommendations, isGettingRecommendations } = useRecommendation();
-
-  // Progress 업데이트 핸들러 (Results 단계 전용)
-  const handleProgressUpdate = useCallback(
-    (event: RecommendationProgressEvent) => {
-      setProgressState((prev) => ({
-        ...prev,
-        [event.step]: {
-          status: event.status,
-          meta: event.meta,
-          message: event.message,
-        },
-      }));
-    },
-    []
+  // Results 단계 전용 훅
+  const {
+    recommendations,
+    recommendationError,
+    progressState,
+    isLoading: isGettingRecommendations,
+    handlePriorityComplete: handleRecommendationComplete,
+    reset: resetRecommendations,
+  } = useRecommendationFlow(
+    selectedCity,
+    selectedFood,
+    selectedPriorities,
+    step === 'results'
   );
 
-  // Priority 완료 핸들러 (Results 단계로 이동 + Recommendations fetch)
+  // Priority 완료 핸들러 (step 이동 + Recommendations fetch)
   const handlePriorityComplete = async (priorities: PrioritySettings) => {
     // useSearchFlow의 handlePriorityComplete 호출 (step 이동)
     handlers.handlePriorityComplete(priorities);
-
-    // Results 단계 로직 (나중에 useRecommendationFlow로 분리 예정)
-    setRecommendationError(null);
-    setProgressState(createInitialProgressState());
-
+    // useRecommendationFlow의 handlePriorityComplete 호출 (recommendations fetch)
     if (selectedCity && selectedFood) {
-      try {
-        const result = await getRecommendations({
-          request: {
-            city: selectedCity,
-            food: selectedFood,
-            priorities,
-          },
-          onProgress: handleProgressUpdate,
-        });
-        setRecommendations(result.data.recommendations);
-        setRecommendationError(null);
-      } catch (error) {
-        setRecommendationError(error as Error);
-        setRecommendations([]);
-      }
+      await handleRecommendationComplete(priorities);
     }
   };
 
   // 뒤로가기 핸들러
   const handleBack = () => {
     if (step === 'results') {
-      // results 단계에서 뒤로가기 시 progress state 초기화
-      setProgressState(createInitialProgressState());
+      // results 단계에서 뒤로가기 시 recommendations 상태 초기화
+      resetRecommendations();
     }
     handlers.handleBack();
   };
@@ -99,33 +55,8 @@ export default function Home() {
   // 새 검색 시작
   const handleNewSearch = () => {
     handlers.handleNewSearch();
-    setRecommendations([]);
-    setRecommendationError(null);
-    setProgressState(createInitialProgressState());
+    resetRecommendations();
   };
-
-  const steps = [
-    {
-      key: 'city' as const,
-      label: 'City Selection',
-      description: 'Choose your destination',
-    },
-    {
-      key: 'food' as const,
-      label: 'Food Preferences',
-      description: 'Pick a cuisine focus',
-    },
-    {
-      key: 'priority' as const,
-      label: 'Personalize Priorities',
-      description: 'Rank what matters most',
-    },
-    {
-      key: 'results' as const,
-      label: 'Recommendations',
-      description: 'Review curated spots',
-    },
-  ];
 
   const loadingIndicator = () => {
     return (
@@ -158,13 +89,11 @@ export default function Home() {
     if (step === 'food' && selectedCity) {
       return (
         <FoodSelector
-          localFoods={localFoods}
           selectedCity={selectedCity}
           selectedFood={selectedFood}
           onFoodSelect={handlers.handleFoodSelect}
           onNext={handlers.handleNext}
           onBack={handleBack}
-          isLoading={isLoadingFoods}
         />
       );
     }
@@ -217,7 +146,6 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8 lg:py-12">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
           <ProgressPanel
-            steps={steps}
             currentStep={step}
             selectedCity={selectedCity}
             selectedFood={selectedFood}

@@ -1,6 +1,7 @@
 'use client';
 
 import { COMMON_FOODS } from '@/app/data/foods';
+import { useFood } from '@/app/hooks/useFood';
 import type { City } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
 import { Button } from '@/components/ui/button';
@@ -15,37 +16,33 @@ import { useEffect, useRef, useState } from 'react';
 import { FoodCard } from './FoodCard';
 
 export interface FoodSelectorProps {
-  localFoods: Food[];
   selectedCity: City;
   selectedFood?: Food | null;
   onFoodSelect: (food: Food) => void;
   onNext: () => void;
   onBack: () => void;
   disabled?: boolean;
-  isLoading?: boolean;
 }
 
 /**
  * 음식 선택 컴포넌트
- * @param {Food[]} localFoods - 로컬 음식 목록
  * @param {City} selectedCity - 선택된 도시
  * @param {Food} selectedFood - 선택된 음식
  * @param {Function} onFoodSelect - 음식 선택 시 호출되는 콜백
  * @param {Function} onNext - 다음 단계로 이동 시 호출되는 콜백
  * @param {Function} onBack - 뒤로가기 시 호출되는 콜백
  * @param {boolean} [disabled] - 비활성화 상태
- * @param {boolean} [isLoading] - 로딩 상태
  */
 export function FoodSelector({
-  localFoods,
   selectedCity,
   selectedFood,
   onFoodSelect,
   onNext,
   onBack,
   disabled = false,
-  isLoading = false,
 }: FoodSelectorProps) {
+  // 내부에서 localFoods 데이터 fetching
+  const { localFoods, isLoadingFoods } = useFood(selectedCity, true);
   const [activeTab, setActiveTab] = useState<'common' | 'local'>('common');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -123,7 +120,7 @@ export function FoodSelector({
               ))}
             {activeTab === 'local' && (
               <>
-                {isLoading ? (
+                {isLoadingFoods ? (
                   <div className="flex flex-col items-center justify-center py-10 text-sm text-gray-500 gap-3">
                     <div className="ai-loader" />
                     Loading local flavors...
@@ -164,7 +161,7 @@ export function FoodSelector({
             ))}
           </div>
           <div className="space-y-3 max-h-72 overflow-y-auto p-3 rounded-2xl border border-gray-100 bg-white/60">
-            {isLoading ? (
+            {isLoadingFoods ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3 text-sm text-gray-500">
                 <div className="ai-loader" />
                 Loading local foods...

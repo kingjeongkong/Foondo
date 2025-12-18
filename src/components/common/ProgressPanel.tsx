@@ -4,14 +4,30 @@ import type { Food } from '@/app/types/food';
 import type { PrioritySettings } from '@/app/types/search';
 import { CheckIcon } from 'lucide-react';
 
-interface ProgressStepDefinition<T extends Step> {
-  key: T;
-  label: string;
-  description: string;
-}
+const steps = [
+  {
+    key: 'city' as const,
+    label: 'City Selection',
+    description: 'Choose your destination',
+  },
+  {
+    key: 'food' as const,
+    label: 'Food Preferences',
+    description: 'Pick a cuisine focus',
+  },
+  {
+    key: 'priority' as const,
+    label: 'Personalize Priorities',
+    description: 'Rank what matters most',
+  },
+  {
+    key: 'results' as const,
+    label: 'Recommendations',
+    description: 'Review curated spots',
+  },
+];
 
 interface ProgressPanelProps<T extends Step> {
-  steps: ProgressStepDefinition<T>[];
   currentStep: T;
   selectedCity: City | null;
   selectedFood: Food | null;
@@ -35,7 +51,6 @@ function formatPrioritySummary(priorities: PrioritySettings | null) {
  * Funnel 단계 진행 상황과 현재 선택 상태를 표시하는 패널
  */
 export function ProgressPanel<T extends Step>({
-  steps,
   currentStep,
   selectedCity,
   selectedFood,
