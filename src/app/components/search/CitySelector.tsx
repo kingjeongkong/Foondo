@@ -75,6 +75,9 @@ export function CitySelector({
         <LocationAutocomplete
           onSelect={handleLocationSelect}
           disabled={disabled}
+          selectedCity={
+            selectedCity ? `${selectedCity.name}, ${selectedCity.country}` : ''
+          }
         />
 
         {selectedCity ? (
