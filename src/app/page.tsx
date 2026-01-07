@@ -16,11 +16,8 @@ function AppHeader() {
   return (
     <header className="app-header">
       <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
+        <p className="app-brand uppercase tracking-[0.3em] text-gray-500">
           Foondo
-        </p>
-        <p className="app-brand">
-          AI-powered food recommendations for travelers
         </p>
       </div>
       <div className="flex items-center gap-3 text-sm text-gray-500">
