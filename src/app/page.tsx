@@ -17,9 +17,11 @@ function AppHeader() {
     <header className="app-header">
       <div>
         <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
-          Foondo AI
+          Foondo
         </p>
-        <p className="app-brand">Culinary Intelligence Suite</p>
+        <p className="app-brand">
+          AI-powered food recommendations for travelers
+        </p>
       </div>
       <div className="flex items-center gap-3 text-sm text-gray-500">
         <span className="hidden sm:inline">Need help?</span>
