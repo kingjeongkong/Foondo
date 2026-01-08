@@ -88,8 +88,7 @@ export async function POST(request: NextRequest) {
             city.id,
             city.name,
             food.id,
-            food.name,
-            10
+            food.name
           );
 
           const existingRestaurants = await getExistingRestaurantsByFood(
