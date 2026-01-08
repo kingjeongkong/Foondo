@@ -19,7 +19,6 @@ import pLimit from 'p-limit';
  * @param cityName 도시명
  * @param foodId 음식 ID
  * @param foodName 음식명
- * @param maxResults 최대 검색 결과 수
  * @returns 저장된 레스토랑 배열
  */
 export async function searchAndSaveRestaurants(
@@ -27,16 +26,11 @@ export async function searchAndSaveRestaurants(
   cityName: string,
   foodId: string,
   foodName: string,
-  maxResults: number = 5
 ) {
   console.log(`🔍 음식점 검색 시작: ${cityName} - ${foodName}`);
 
   // 1. Google Places API로 음식점 검색
-  const restaurants = await searchRestaurantsByFood(
-    cityName,
-    foodName,
-    maxResults
-  );
+  const restaurants = await searchRestaurantsByFood(cityName, foodName);
 
   if (restaurants.length === 0) {
     console.log(`⚠️ 검색 결과 없음: ${cityName} - ${foodName}`);
