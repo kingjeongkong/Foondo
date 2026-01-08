@@ -148,40 +148,54 @@ export function FoodSelector({
 
         {/* 데스크톱: 2열 그리드 */}
         <div className="hidden md:grid md:grid-cols-2 gap-6">
-          <div className="space-y-3 max-h-72 overflow-y-auto p-3 rounded-2xl border border-gray-100 bg-white/60">
-            {COMMON_FOODS.map((food) => (
-              <FoodCard
-                key={food.id}
-                food={food}
-                onSelect={() => onFoodSelect(food)}
-                isLocal={false}
-                disabled={disabled}
-                isSelected={selectedFood?.id === food.id}
-              />
-            ))}
-          </div>
-          <div className="space-y-3 max-h-72 overflow-y-auto p-3 rounded-2xl border border-gray-100 bg-white/60">
-            {isLoadingFoods ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3 text-sm text-gray-500">
-                <div className="ai-loader" />
-                Loading local foods...
-              </div>
-            ) : localFoods.length > 0 ? (
-              localFoods.map((food) => (
+          <div className="space-y-2">
+            <div className="flex items-center justify-center">
+              <h3 className="text-base font-semibold text-gray-900">
+                Common Foods
+              </h3>
+            </div>
+            <div className="space-y-3 max-h-95 overflow-y-auto p-3 rounded-2xl border border-gray-100 bg-white/60">
+              {COMMON_FOODS.map((food) => (
                 <FoodCard
                   key={food.id}
                   food={food}
                   onSelect={() => onFoodSelect(food)}
-                  isLocal={true}
+                  isLocal={false}
                   disabled={disabled}
                   isSelected={selectedFood?.id === food.id}
                 />
-              ))
-            ) : (
-              <div className="text-center text-sm text-gray-500 py-10">
-                No local foods detected.
-              </div>
-            )}
+              ))}
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-center">
+              <h3 className="text-base font-semibold text-gray-900">
+                Local Foods
+              </h3>
+            </div>
+            <div className="space-y-3 max-h-95 overflow-y-auto p-3 rounded-2xl border border-gray-100 bg-white/60">
+              {isLoadingFoods ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3 text-sm text-gray-500">
+                  <div className="ai-loader" />
+                  Loading local foods...
+                </div>
+              ) : localFoods.length > 0 ? (
+                localFoods.map((food) => (
+                  <FoodCard
+                    key={food.id}
+                    food={food}
+                    onSelect={() => onFoodSelect(food)}
+                    isLocal={true}
+                    disabled={disabled}
+                    isSelected={selectedFood?.id === food.id}
+                  />
+                ))
+              ) : (
+                <div className="text-center text-sm text-gray-500 py-10">
+                  No local foods detected.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>

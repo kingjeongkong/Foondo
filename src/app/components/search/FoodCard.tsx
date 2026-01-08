@@ -49,10 +49,10 @@ export function FoodCard({
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-sm text-gray-900 truncate">
+              <h3 className="font-semibold text-base text-gray-900 truncate">
                 {food.name}
               </h3>
-              <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">
+              <span className="text-[9px] font-medium uppercase tracking-wide mt-1 text-gray-400">
                 {isLocal && food.category}
               </span>
             </div>
