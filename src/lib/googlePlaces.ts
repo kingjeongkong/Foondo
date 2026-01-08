@@ -68,13 +68,11 @@ export interface RestaurantData {
  * Google Places Text Search API를 사용하여 특정 도시와 음식에 대한 레스토랑을 검색합니다.
  * @param cityName 도시명
  * @param foodName 음식명
- * @param maxResults 최대 결과 수 (기본값: 20)
  * @returns 검색된 레스토랑 데이터 배열
  */
 export async function searchRestaurantsByFood(
   cityName: string,
-  foodName: string,
-  maxResults: number = 5
+  foodName: string
 ): Promise<RestaurantData[]> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 
@@ -115,18 +113,16 @@ export async function searchRestaurantsByFood(
     console.log(`✅ Google Places 검색 완료: ${data.results.length}개 결과`);
 
     // 결과를 표준화된 형태로 변환
-    const restaurants: RestaurantData[] = data.results
-      .slice(0, maxResults)
-      .map((place) => ({
-        placeId: place.place_id,
-        name: place.name,
-        address: place.formatted_address,
-        rating: place.rating,
-        reviewCount: place.user_ratings_total,
-        photoReference: place.photos?.[0]?.photo_reference,
-        priceLevel: place.price_level,
-        location: place.geometry?.location,
-      }));
+    const restaurants: RestaurantData[] = data.results.map((place) => ({
+      placeId: place.place_id,
+      name: place.name,
+      address: place.formatted_address,
+      rating: place.rating,
+      reviewCount: place.user_ratings_total,
+      photoReference: place.photos?.[0]?.photo_reference,
+      priceLevel: place.price_level,
+      location: place.geometry?.location,
+    }));
 
     return restaurants;
   } catch (error) {
