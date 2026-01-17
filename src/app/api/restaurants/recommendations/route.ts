@@ -137,28 +137,88 @@ export async function POST(request: NextRequest) {
             completeStep('ANALYZE_REPORTS');
           } else {
             console.log(`📝 단계 3 실행: ${reviewDataList.length}개 음식점 리포트 생성 시작`);
+            console.log(`🔍 pLimit 상태: activeCount=${reportLimiter.activeCount}, pendingCount=${reportLimiter.pendingCount}`);
             
-            // pLimit을 사용하여 동시 실행 제한
-            // pLimit은 함수를 받아서 Promise를 반환하므로, 직접 함수를 전달해야 함
-            const reportPromises = reviewDataList.map((reviewData: ReviewData) => {
-              // pLimit이 반환하는 Promise를 직접 사용
-              return reportLimiter(async () => {
-                try {
-                  return await analyzeAndSaveRestaurantReport(reviewData);
-                } catch (error) {
-                  console.error(`❌ 리포트 생성 실패 (${reviewData.restaurantId}):`, error);
-                  throw error;
+            // 원래 코드로 되돌림 - 디버깅을 위해
+            const reportPromises = reviewDataList.map((reviewData: ReviewData, index: number) => {
+              console.log(`📦 Promise 생성 시작: [${index}] ${reviewData.restaurantId}`);
+              
+              const promise = reportLimiter(() => {
+                console.log(`▶️ 함수 실행 시작: [${index}] ${reviewData.restaurantId}`);
+                const result = analyzeAndSaveRestaurantReport(reviewData);
+                console.log(`📊 함수 반환값 타입: [${index}] ${result instanceof Promise ? 'Promise' : typeof result}`);
+                
+                // Promise 상태 추적
+                if (result instanceof Promise) {
+                  result.then(
+                    (value) => {
+                      console.log(`✅ Promise fulfilled: [${index}] ${reviewData.restaurantId}`);
+                    },
+                    (error) => {
+                      console.log(`❌ Promise rejected: [${index}] ${reviewData.restaurantId}`, error);
+                    }
+                  );
                 }
+                
+                return result;
               });
+              
+              console.log(`📦 Promise 생성 완료: [${index}] ${reviewData.restaurantId}, promise 타입: ${promise instanceof Promise ? 'Promise' : typeof promise}`);
+              
+              // pLimit이 반환한 Promise 상태 추적
+              promise.then(
+                (value) => {
+                  console.log(`✅ pLimit Promise fulfilled: [${index}] ${reviewData.restaurantId}`);
+                },
+                (error) => {
+                  console.log(`❌ pLimit Promise rejected: [${index}] ${reviewData.restaurantId}`, error);
+                }
+              );
+              
+              return promise;
             });
             
             console.log(`⏳ ${reportPromises.length}개 리포트 생성 Promise 대기 중...`);
-            reportResults = await Promise.allSettled(reportPromises);
-            console.log(`✅ Promise.allSettled 완료`);
+            console.log(`🔍 pLimit 상태 (Promise.allSettled 전): activeCount=${reportLimiter.activeCount}, pendingCount=${reportLimiter.pendingCount}`);
             
-            const fulfilledCount = reportResults.filter(r => r.status === 'fulfilled').length;
-            const rejectedCount = reportResults.filter(r => r.status === 'rejected').length;
-            console.log(`✅ 단계 3 완료: ${fulfilledCount}개 성공, ${rejectedCount}개 실패`);
+            // Promise.allSettled 시작 시간 기록
+            const startTime = Date.now();
+            console.log(`⏰ Promise.allSettled 시작: ${new Date().toISOString()}`);
+            
+            // 각 Promise의 상태를 주기적으로 체크
+            const checkInterval = setInterval(() => {
+              const pending = reportPromises.filter(p => {
+                // Promise 상태를 확인하기 어려우므로, pLimit 상태로 추정
+                return true; // 정확한 상태 확인은 어려움
+              });
+              console.log(`🔍 진행 상황 체크: activeCount=${reportLimiter.activeCount}, pendingCount=${reportLimiter.pendingCount}, 경과시간=${Date.now() - startTime}ms`);
+            }, 5000); // 5초마다 체크
+            
+            try {
+              reportResults = await Promise.allSettled(reportPromises);
+              clearInterval(checkInterval);
+              
+              const endTime = Date.now();
+              console.log(`✅ Promise.allSettled 완료: ${new Date().toISOString()}, 소요시간=${endTime - startTime}ms`);
+              console.log(`🔍 pLimit 상태 (Promise.allSettled 후): activeCount=${reportLimiter.activeCount}, pendingCount=${reportLimiter.pendingCount}`);
+              
+              const fulfilledCount = reportResults.filter(r => r.status === 'fulfilled').length;
+              const rejectedCount = reportResults.filter(r => r.status === 'rejected').length;
+              console.log(`✅ 단계 3 완료: ${fulfilledCount}개 성공, ${rejectedCount}개 실패`);
+              
+              // 실패한 Promise 상세 정보
+              if (rejectedCount > 0) {
+                reportResults.forEach((result, index) => {
+                  if (result.status === 'rejected') {
+                    console.error(`❌ 실패한 Promise [${index}]:`, result.reason);
+                  }
+                });
+              }
+            } catch (error) {
+              clearInterval(checkInterval);
+              console.error(`❌ Promise.allSettled 에러:`, error);
+              throw error;
+            }
             
             completeStep('ANALYZE_REPORTS');
           }
