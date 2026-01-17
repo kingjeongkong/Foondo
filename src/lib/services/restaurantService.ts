@@ -11,6 +11,7 @@ import {
 } from '@/lib/googlePlaces';
 import { prisma } from '@/lib/prisma';
 import { analyzeReviewsWithAI } from '@/lib/services/aiReviewService';
+import { withTimeout } from '@/utils/promise';
 import pLimit from 'p-limit';
 
 /**
@@ -228,13 +229,14 @@ export async function collectRestaurantReviews(
  * 음식점의 리뷰를 AI로 분석하고 리포트를 생성/업데이트합니다.
  * - 리포트가 없는 음식점 데이터만 받습니다 (이미 collectRestaurantReviews에서 필터링됨)
  * - 리뷰가 없는 경우: 기본 리포트 생성 (모든 점수 null)
- * - 리뷰가 있는 경우: AI 분석 실행
+ * - 리뷰가 있는 경우: AI 분석 실행 (타임아웃 적용)
+ * - 타임아웃 또는 에러 발생 시: null 반환 (DB 저장 안 함, 다음 요청 시 재시도)
  * @param reviewData 리뷰 데이터 (리포트가 없는 음식점만)
- * @returns 생성/업데이트된 리포트
+ * @returns 생성/업데이트된 리포트 또는 null (실패 시)
  */
 export async function analyzeAndSaveRestaurantReport(
   reviewData: ReviewData
-): Promise<RestaurantReport> {
+): Promise<RestaurantReport | null> {
   try {
     if (reviewData.reviews.length === 0) {
       // 리뷰 없음 → 기본 리포트 생성 (모든 점수 null)
@@ -248,12 +250,17 @@ export async function analyzeAndSaveRestaurantReport(
       });
     }
 
-    // 리뷰 있음 → AI 분석 실행
+    // 리뷰 있음 → AI 분석 실행 (타임아웃 적용)
     console.log(
       `🤖 AI 분석 시작: ${reviewData.restaurantId} (${reviewData.reviews.length}개 리뷰)`
     );
 
-    const analysis = await analyzeReviewsWithAI(reviewData.reviews);
+    // 20초 타임아웃 적용: 응답이 없으면 에러 발생하여 catch로 이동
+    const analysis = await withTimeout(
+      analyzeReviewsWithAI(reviewData.reviews),
+      15000,
+      'AI analysis timeout'
+    );
 
     console.log(
       `💾 리포트 저장: ${reviewData.restaurantId} (신뢰도: ${analysis.confidence}%)`
@@ -274,28 +281,15 @@ export async function analyzeAndSaveRestaurantReport(
       },
     });
   } catch (error) {
-    // 일부 실패 허용: 에러 로그만 남기고 기본 리포트로 대체
+    // 타임아웃 또는 에러 발생 시: DB에 저장하지 않고 null 반환
+    // 다음 요청 시 자동으로 재시도됨
     console.error(
-      `❌ 리포트 생성 실패 (restaurantId: ${reviewData.restaurantId}):`,
-      error
+      `❌ 리포트 생성 실패/타임아웃 (restaurantId: ${reviewData.restaurantId}):`,
+      error instanceof Error ? error.message : 'Unknown error'
     );
 
-    // 실패한 경우 기본 리포트 생성 (upsert 사용하여 중복 생성 방지)
-    try {
-      return await prisma.restaurantReport.upsert({
-        where: { restaurantId: reviewData.restaurantId },
-        update: {},
-        create: {
-          restaurantId: reviewData.restaurantId,
-        },
-      });
-    } catch (fallbackError) {
-      console.error(
-        `❌ 기본 리포트 생성도 실패 (restaurantId: ${reviewData.restaurantId}):`,
-        fallbackError
-      );
-      throw fallbackError;
-    }
+    // DB에 저장하지 않고 null 반환 -> 결과에서 제외 & 다음에 재시도
+    return null;
   }
 }
 
