@@ -136,15 +136,35 @@ export async function POST(request: NextRequest) {
             reportResults = [];
             completeStep('ANALYZE_REPORTS');
           } else {
-            const reportPromises = reviewDataList.map(
-              (reviewData: ReviewData) =>
-                reportLimiter(() => analyzeAndSaveRestaurantReport(reviewData))
-            );
+            console.log(`📝 단계 3 실행: ${reviewDataList.length}개 음식점 리포트 생성 시작`);
+            
+            // pLimit을 사용하여 동시 실행 제한
+            // pLimit은 함수를 받아서 Promise를 반환하므로, 직접 함수를 전달해야 함
+            const reportPromises = reviewDataList.map((reviewData: ReviewData) => {
+              // pLimit이 반환하는 Promise를 직접 사용
+              return reportLimiter(async () => {
+                try {
+                  return await analyzeAndSaveRestaurantReport(reviewData);
+                } catch (error) {
+                  console.error(`❌ 리포트 생성 실패 (${reviewData.restaurantId}):`, error);
+                  throw error;
+                }
+              });
+            });
+            
+            console.log(`⏳ ${reportPromises.length}개 리포트 생성 Promise 대기 중...`);
             reportResults = await Promise.allSettled(reportPromises);
+            console.log(`✅ Promise.allSettled 완료`);
+            
+            const fulfilledCount = reportResults.filter(r => r.status === 'fulfilled').length;
+            const rejectedCount = reportResults.filter(r => r.status === 'rejected').length;
+            console.log(`✅ 단계 3 완료: ${fulfilledCount}개 성공, ${rejectedCount}개 실패`);
+            
             completeStep('ANALYZE_REPORTS');
           }
 
           // 단계 4: 점수 계산 및 랭킹
+          console.log(`📝 단계 4 실행: 점수 계산 및 랭킹 시작`);
           beginStep('CALCULATE_SCORES');
 
           const newReports = reportResults
@@ -165,15 +185,18 @@ export async function POST(request: NextRequest) {
 
           const allReports = [...newReports, ...existingRestaurantReports];
 
+          console.log(`🔢 점수 계산 시작: ${allRestaurants.length}개 음식점, ${allReports.length}개 리포트`);
           const restaurantScores = calculateRestaurantScores(
             allRestaurants,
             allReports,
             priorities
           );
+          console.log(`✅ 점수 계산 완료: ${restaurantScores.length}개 결과`);
 
           await new Promise((resolve) => setTimeout(resolve, 300));
           completeStep('CALCULATE_SCORES');
 
+          console.log(`📦 최종 결과 생성 시작: ${restaurantScores.length}개 추천`);
           const payload: RecommendationResponse = {
             success: true,
             data: {
@@ -201,10 +224,12 @@ export async function POST(request: NextRequest) {
             message: 'Recommendations generated successfully',
           };
 
+          console.log(`✅ 최종 결과 생성 완료, 클라이언트에 전송 시작`);
           sendEvent({
             type: 'result',
             payload,
           });
+          console.log(`✅ 클라이언트에 전송 완료`);
         } catch (error) {
           console.error('❌ 음식점 추천 요청 실패:', error);
           if (activeStep) {
