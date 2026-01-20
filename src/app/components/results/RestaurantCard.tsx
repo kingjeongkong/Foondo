@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { openGoogleMaps } from '@/lib/googlePlaces';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -45,8 +46,20 @@ export function RestaurantCard({
     return 'bg-gray-100 text-gray-700';
   };
 
+  // 구글맵 열기 핸들러
+  const handleCardClick = () => {
+    if (restaurant.placeId) {
+      openGoogleMaps(restaurant.placeId);
+    }
+  };
+
   return (
-    <Card className="restaurant-card w-full hover:shadow-lg transition-all duration-300">
+    <Card
+      className="restaurant-card w-full hover:shadow-lg transition-all duration-300 cursor-pointer"
+      onClick={handleCardClick}
+      role="button"
+      aria-label={`Open ${restaurant.name || 'restaurant'} on Google Maps`}
+    >
       <CardContent className="relative p-4 md:p-6 md:pr-32">
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* 왼쪽: 랭킹 배지 + 사진 + 모바일 점수 */}
