@@ -71,7 +71,11 @@ function HomeContent() {
     resetRecommendations();
   };
 
-  const isLoading = status.isLoadingCity || status.isLoadingFood;
+  // step별로 다른 로딩 조건 적용
+  const isLoading =
+    step === 'city' || step === 'food'
+      ? status.isLoadingCity 
+      : status.isLoadingCity || status.isLoadingFood; 
 
   return (
     <div className="container mx-auto px-4 py-8 lg:py-12">
@@ -90,7 +94,7 @@ function HomeContent() {
                 <div className="flex flex-col items-center justify-center gap-4 py-12">
                   <div className="ai-loader w-8 h-8" />
                   <p className="text-sm text-gray-500">
-                    Loading city and food data...
+                    Loading...
                   </p>
                 </div>
               </div>
