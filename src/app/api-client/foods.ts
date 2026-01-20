@@ -1,7 +1,7 @@
 import { City } from '@/app/types/city';
 import { FoodResponse } from '@/app/types/food';
 
-export function foodService() {
+export function foodApi() {
   const getFoods = async (city: City): Promise<FoodResponse> => {
     try {
       const response = await fetch('/api/foods', {

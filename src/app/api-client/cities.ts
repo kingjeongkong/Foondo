@@ -1,6 +1,6 @@
 import { CityResponse, CreateCityRequest } from '../types/city';
 
-export function cityService() {
+export function cityApi() {
   const createOrGetCity = async (
     data: CreateCityRequest
   ): Promise<CityResponse> => {

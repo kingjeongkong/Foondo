@@ -1,5 +1,5 @@
 import { COMMON_FOODS } from '@/app/data/constants/foods';
-import { foodService } from '@/app/services/foodService';
+import { foodApi } from '@/app/api-client/foods';
 import { City } from '@/app/types/city';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
@@ -8,7 +8,7 @@ import { useCityFromCache } from './useCity';
 export function useFood(city: City | null, enabled: boolean) {
   const { data: localFoods, isLoading: isLoadingFoods } = useQuery({
     queryKey: ['foods', city?.id],
-    queryFn: () => foodService().getFoods(city!),
+    queryFn: () => foodApi().getFoods(city!),
     enabled: !!city && enabled,
     throwOnError: true,
     staleTime: 1000 * 60 * 30,

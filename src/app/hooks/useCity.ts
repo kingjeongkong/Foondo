@@ -1,4 +1,4 @@
-import { cityService } from '@/app/services/cityService';
+import { cityApi } from '@/app/api-client/cities';
 import type { City } from '@/app/types/city';
 import { CreateCityRequest } from '@/app/types/city';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,7 +10,7 @@ export function useCity() {
   const { mutateAsync: createOrGetCity, isPending: isCreatingCity } =
     useMutation({
       mutationFn: (data: CreateCityRequest) => {
-        return cityService().createOrGetCity(data);
+        return cityApi().createOrGetCity(data);
       },
       onSuccess: (response) => {
         // 성공 시 캐시에 저장 (같은 cityId로 재요청 시 캐시 사용)
@@ -60,7 +60,7 @@ export function useCityFromCache(cityId: string | null) {
       // 단, DB에 없는 city(404)는 정상적인 경우이므로 에러를 무시하고 null 반환
       // (사용자가 Continue 버튼을 클릭할 때 createOrGetCity에서 서버에 저장됨)
       try {
-        const response = await cityService().getCity(cityId);
+        const response = await cityApi().getCity(cityId);
         // 404 응답 (NOT_FOUND)은 정상적인 경우 (DB에 없는 city)
         if (!response.success && response.error === 'NOT_FOUND') {
           return null;
