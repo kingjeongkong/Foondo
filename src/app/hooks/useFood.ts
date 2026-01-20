@@ -1,4 +1,4 @@
-import { COMMON_FOODS } from '@/app/data/foods';
+import { COMMON_FOODS } from '@/app/data/constants/foods';
 import { foodService } from '@/app/services/foodService';
 import { City } from '@/app/types/city';
 import { useQuery } from '@tanstack/react-query';

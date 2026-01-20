@@ -1,6 +1,6 @@
 'use client';
 
-import { COMMON_FOODS } from '@/app/data/foods';
+import { COMMON_FOODS } from '@/app/data/constants/foods';
 import { useFood } from '@/app/hooks/useFood';
 import type { City } from '@/app/types/city';
 import type { Food } from '@/app/types/food';

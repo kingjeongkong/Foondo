@@ -1,6 +1,6 @@
 'use client';
 
-import { PRIORITY_ITEMS } from '@/app/data/priorities';
+import { PRIORITY_ITEMS } from '@/app/data/constants/priorities';
 import type { City } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
 import type { PrioritySettings } from '@/app/types/search';
