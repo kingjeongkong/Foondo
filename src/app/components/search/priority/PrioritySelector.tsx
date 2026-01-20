@@ -1,6 +1,6 @@
 'use client';
 
-import { PRIORITY_ITEMS } from '@/app/data/priorities';
+import { PRIORITY_ITEMS } from '@/app/data/constants/priorities';
 import { usePrioritySelection } from '@/app/hooks/usePrioritySelection';
 import type { PriorityItem, PrioritySettings } from '@/app/types/search';
 import { Button } from '@/components/ui/button';

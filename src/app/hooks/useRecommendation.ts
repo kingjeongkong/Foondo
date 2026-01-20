@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { recommendationService } from '../services/recommendationService';
+import { recommendationApi } from '../api-client/recommendations';
 import type {
   RecommendationProgressEvent,
   RecommendationRequest,
@@ -17,7 +17,7 @@ export function useRecommendation() {
     isPending: isGettingRecommendations,
   } = useMutation({
     mutationFn: ({ request, onProgress }: RecommendationMutationVariables) => {
-      return recommendationService().getRecommendations(request, {
+      return recommendationApi().getRecommendations(request, {
         onProgress,
       });
     },

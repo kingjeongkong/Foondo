@@ -10,7 +10,7 @@ import {
   searchRestaurantsByFood,
 } from '@/lib/googlePlaces';
 import { prisma } from '@/lib/prisma';
-import { analyzeReviewsWithAI } from '@/lib/services/aiReviewService';
+import { analyzeReviewsWithAI } from '@/lib/server/aiReviewService';
 import { withTimeout } from '@/utils/promise';
 import pLimit from 'p-limit';
 

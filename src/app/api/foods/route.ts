@@ -1,7 +1,7 @@
 import { City, citySchema } from '@/app/types/city';
 import { FoodResponse } from '@/app/types/food';
 import { prisma } from '@/lib/prisma';
-import { generateAndFormatLocalFoods } from '@/lib/services/aiFoodService';
+import { generateAndFormatLocalFoods } from '@/lib/server/aiFoodService';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
