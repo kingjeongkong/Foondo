@@ -278,3 +278,21 @@ export function getGooglePlacesUsageInfo(): {
     apiKeyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : undefined,
   };
 }
+
+/**
+ * Google Place ID를 사용하여 구글맵 링크 생성
+ * @param placeId Google Places place_id
+ * @returns 구글맵 URL
+ */
+export function getGoogleMapsUrl(placeId: string): string {
+  return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+}
+
+/**
+ * 새 탭에서 구글맵 열기
+ * @param placeId Google Places place_id
+ */
+export function openGoogleMaps(placeId: string): void {
+  const url = getGoogleMapsUrl(placeId);
+  window.open(url, '_blank', 'noopener,noreferrer');
+}

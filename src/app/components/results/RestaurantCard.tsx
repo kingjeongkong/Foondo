@@ -1,6 +1,8 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { openGoogleMaps } from '@/lib/googlePlaces';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -45,9 +47,17 @@ export function RestaurantCard({
     return 'bg-gray-100 text-gray-700';
   };
 
+  // 구글맵 열기 핸들러
+  const handleViewOnMap = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 카드 클릭 이벤트와 분리
+    if (restaurant.placeId) {
+      openGoogleMaps(restaurant.placeId);
+    }
+  };
+
   return (
-    <Card className="restaurant-card w-full hover:shadow-lg transition-all duration-300">
-      <CardContent className="relative p-4 md:p-6 md:pr-32">
+    <Card className="restaurant-card w-full hover:shadow-lg transition-all duration-300 pb-2">
+      <CardContent className="relative p-4 md:p-6 md:pr-32 pb-3 md:pb-3">
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* 왼쪽: 랭킹 배지 + 사진 + 모바일 점수 */}
           <div className="flex w-full md:w-auto items-start gap-3 md:gap-4">
@@ -114,6 +124,17 @@ export function RestaurantCard({
                 <span>{aiSummary}</span>
               </p>
             )}
+
+            {/* View on Map 버튼 */}
+            <Button
+              onClick={handleViewOnMap}
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto mt-2 text-primary-600 border-primary-200 hover:bg-primary-50 hover:border-primary-300 cursor-pointer"
+            >
+              <span className="mr-1.5">📍</span>
+              View on Map
+            </Button>
           </div>
 
           {/* 데스크톱: 카드 우측 상단 점수 */}
