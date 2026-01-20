@@ -11,7 +11,7 @@ import {
   collectRestaurantReviews,
   getExistingRestaurantsByFood,
   searchAndSaveRestaurants,
-} from '@/lib/services/restaurantService';
+} from '@/lib/server/restaurantService';
 import { Restaurant, RestaurantReport } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import pLimit from 'p-limit';
