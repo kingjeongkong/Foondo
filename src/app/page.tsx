@@ -7,8 +7,8 @@ import { PrioritySelector } from '@/app/components/search/PrioritySelector';
 import { useRecommendationFlow } from '@/app/hooks/useRecommendationFlow';
 import { useSearchFlow } from '@/app/hooks/useSearchFlow';
 import type { PrioritySettings } from '@/app/types/search';
-import { FunnelComponent } from '@/components/layout/Funnel';
-import { ProgressPanel } from '@/components/layout/ProgressPanel';
+import { FunnelComponent } from '@/app/components/layout/Funnel';
+import { ProgressPanel } from '@/app/components/layout/ProgressPanel';
 import { Suspense } from 'react';
 
 // 앱 헤더 컴포넌트
