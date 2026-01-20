@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍽️ Foondo
 
-## Getting Started
+**AI-Powered Personalized Restaurant Recommendation System**
 
-First, run the development server:
+Foondo is an AI-based restaurant recommendation system for travelers. Select a city and food, set your priorities, and get personalized restaurant recommendations powered by AI analysis of real reviews.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+<!-- **🔗 Live Demo**: [Coming Soon] -->
+
+
+<br/>
+
+## 📋 Project Overview
+
+AI-powered restaurant recommendation system that analyzes real reviews and provides personalized rankings based on user preferences.
+
+**How it works:**
+- 🔍 Restaurant search via **Google Places API**
+- 🤖 Review analysis using **OpenAI**
+- 📊 Personalized ranking with real-time streaming progress
+
+
+<br/>
+
+## ✨ Key Features
+
+| Feature | Description |
+|---------|-------------|
+| 🏙️ **City & Food Selection** | Choose destination and cuisine with AI-generated local recommendations |
+| ⚖️ **Priority-Based Ranking** | Customize weights for taste, price, atmosphere, service, quantity, and accessibility |
+| 🤖 **AI Analysis** | Automated review analysis and scoring using OpenAI |
+| 📡 **Real-Time Updates** | Streaming API for live progress tracking |
+
+
+<br/>
+
+## 🛠️ Tech Stack
+
+| Category | Technologies |
+|----------|-------------|
+| **Framework** | Next.js 15, React 19, TypeScript |
+| **Styling** | Tailwind CSS 4, shadcn/ui |
+| **Database** | PostgreSQL, Prisma |
+| **State Management** | React Query |
+| **APIs** | OpenAI, Google Places, Mapbox |
+| **Tools** | Turbopack, pnpm |
+
+
+<br/>
+
+## 📁 Project Structure
+
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+src/
+├── app/              # Next.js App Router
+│   ├── api/          # API Routes
+│   ├── api-client/   # Client-side API wrappers
+│   ├── components/   # App components (layout, search, results)
+│   ├── data/         # Constants and mocks
+│   ├── hooks/        # Custom React hooks
+│   └── types/        # TypeScript types
+├── components/       # Shared UI (shadcn/ui)
+├── lib/              # External integrations (server logic, API clients)
+└── utils/            # Utility functions
+```
