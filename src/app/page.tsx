@@ -3,9 +3,9 @@
 import { FunnelComponent } from '@/app/components/layout/Funnel';
 import { ProgressPanel } from '@/app/components/layout/ProgressPanel';
 import { RecommendationsResult } from '@/app/components/results/RecommendationsResult';
-import { CitySelector } from '@/app/components/search/CitySelector';
-import { FoodSelector } from '@/app/components/search/FoodSelector';
-import { PrioritySelector } from '@/app/components/search/PrioritySelector';
+import { CitySelector } from '@/app/components/search/city/CitySelector';
+import { FoodSelector } from '@/app/components/search/food/FoodSelector';
+import { PrioritySelector } from '@/app/components/search/priority/PrioritySelector';
 import { useRecommendationFlow } from '@/app/hooks/useRecommendationFlow';
 import { useSearchFlow } from '@/app/hooks/useSearchFlow';
 import type { PrioritySettings } from '@/app/types/search';
