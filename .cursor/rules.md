@@ -111,12 +111,15 @@ src/
 #### App-Specific Components (`src/app/components/`)
 
 - **Purpose**: All Foondo app-specific components
-- **Organization**: Feature-based folders
+- **Organization**: Feature-based folders with subfolders for complex features
   - `layout/` - Layout components (Funnel, ProgressPanel)
-  - `search/` - Search flow components (CitySelector, FoodSelector, etc.)
+  - `search/` - Search flow components (organized by feature: `city/`, `food/`, `priority/`)
+    - `city/` - City selection (CitySelector, LocationAutocomplete)
+    - `food/` - Food selection (FoodSelector, FoodCard)
+    - `priority/` - Priority selection (PrioritySelector, PriorityItem, SelectedPriorities, AvailablePriorities)
   - `results/` - Results display components (RestaurantCard, RecommendationsResult, etc.)
 - **Examples**: CitySelector, RestaurantCard, RecommendationProgress
-- **Location**: `src/app/components/[feature]/[Component].tsx`
+- **Location**: `src/app/components/[feature]/[subfolder]/[Component].tsx` or `src/app/components/[feature]/[Component].tsx`
 
 ### Folder Role Definitions
 
@@ -159,11 +162,18 @@ app/components/
 ├── layout/              # Layout components
 │   ├── Funnel.tsx
 │   └── ProgressPanel.tsx
-├── search/              # Search flow components
-│   ├── CitySelector.tsx
-│   ├── FoodSelector.tsx
-│   ├── PrioritySelector.tsx
-│   └── ...
+├── search/              # Search flow components (feature-based subfolders)
+│   ├── city/            # City selection feature
+│   │   ├── CitySelector.tsx
+│   │   └── LocationAutocomplete.tsx
+│   ├── food/            # Food selection feature
+│   │   ├── FoodSelector.tsx
+│   │   └── FoodCard.tsx
+│   └── priority/        # Priority selection feature
+│       ├── PrioritySelector.tsx
+│       ├── PriorityItem.tsx
+│       ├── SelectedPriorities.tsx
+│       └── AvailablePriorities.tsx
 └── results/             # Results display components
     ├── RestaurantCard.tsx
     ├── RecommendationsResult.tsx
@@ -171,8 +181,8 @@ app/components/
 ```
 
 - **Purpose**: All Foondo app-specific components
-- **Organization**: Feature-based folders
-- **Usage**: Import from `@/app/components/[feature]/[Component]`
+- **Organization**: Feature-based folders with subfolders for complex features
+- **Usage**: Import from `@/app/components/[feature]/[subfolder]/[Component]` or `@/app/components/[feature]/[Component]`
 
 #### `src/components/ui/` (Shared UI Library)
 
@@ -272,7 +282,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 // App-specific components
-import { CitySelector } from '@/app/components/search/CitySelector';
+import { CitySelector } from '@/app/components/search/city/CitySelector';
+import { FoodSelector } from '@/app/components/search/food/FoodSelector';
+import { PrioritySelector } from '@/app/components/search/priority/PrioritySelector';
 import { RestaurantCard } from '@/app/components/results/RestaurantCard';
 import { FunnelComponent } from '@/app/components/layout/Funnel';
 
@@ -329,7 +341,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 // 4. App-specific components
-import { CitySelector } from '@/app/components/search/CitySelector';
+import { CitySelector } from '@/app/components/search/city/CitySelector';
+import { FoodSelector } from '@/app/components/search/food/FoodSelector';
 
 // 5. App-specific hooks
 import { useCity } from '@/app/hooks/useCity';
