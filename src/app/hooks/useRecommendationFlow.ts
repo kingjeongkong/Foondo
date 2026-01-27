@@ -7,7 +7,7 @@ import type {
   RecommendationProgressState,
 } from '@/app/types/recommendations';
 import type { PrioritySettings } from '@/app/types/search';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const createInitialProgressState = (): RecommendationProgressState => ({
   SEARCH_RESTAURANTS: { status: 'pending' },
@@ -29,6 +29,8 @@ export function useRecommendationFlow(city: City | null, food: Food | null) {
   );
   const [progressState, setProgressState] =
     useState<RecommendationProgressState>(() => createInitialProgressState());
+
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const { getRecommendations, isGettingRecommendations } = useRecommendation();
 
@@ -54,6 +56,15 @@ export function useRecommendationFlow(city: City | null, food: Food | null) {
         return;
       }
 
+      // 이전 요청이 진행 중이면 취소
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // 새로운 AbortController 생성
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
       setRecommendationError(null);
       setProgressState(createInitialProgressState());
 
@@ -65,10 +76,21 @@ export function useRecommendationFlow(city: City | null, food: Food | null) {
             priorities,
           },
           onProgress: handleProgressUpdate,
+          signal: abortController.signal,
         });
+
         setRecommendations(result.data.recommendations);
         setRecommendationError(null);
       } catch (error) {
+        if (
+          error instanceof Error &&
+          (error.name === 'AbortError' ||
+            (error instanceof DOMException && error.name === 'AbortError'))
+        ) {
+          console.log('⚠️ Recommendation request aborted:', error.message);
+          return;
+        }
+
         setRecommendationError(error as Error);
         setRecommendations([]);
       }
@@ -78,9 +100,24 @@ export function useRecommendationFlow(city: City | null, food: Food | null) {
 
   // 상태 초기화 함수
   const reset = useCallback(() => {
+    // 진행 중인 요청 취소
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
     setRecommendations([]);
     setRecommendationError(null);
     setProgressState(createInitialProgressState());
+  }, []);
+
+  // 컴포넌트 언마운트 시 진행 중인 요청 취소
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   return {
