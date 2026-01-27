@@ -42,9 +42,36 @@ export async function POST(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         const sendEvent = (event: RecommendationStreamEvent) => {
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
-          );
+          try {
+            // 스트림 컨트롤러가 이미 닫힌 경우 이벤트 전송을 건너뜁니다.
+            if (controller.desiredSize === null) {
+              console.debug(
+                '⚠️ SSE controller already closed. Skip sending event.',
+                event.type
+              );
+              return;
+            }
+
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
+            );
+          } catch (error) {
+            // 컨트롤러가 닫힌 상태에서 enqueue를 시도한 경우는 조용히 무시합니다.
+            if (
+              error instanceof TypeError &&
+              typeof error.message === 'string' &&
+              error.message.includes('closed')
+            ) {
+              console.debug(
+                '⚠️ Failed to enqueue SSE event because controller is closed.',
+                event.type
+              );
+              return;
+            }
+
+            // 그 외 예상하지 못한 에러는 상위 에러 핸들링으로 전달합니다.
+            throw error;
+          }
         };
 
         let activeStep: RecommendationProgressStep | null = null;
