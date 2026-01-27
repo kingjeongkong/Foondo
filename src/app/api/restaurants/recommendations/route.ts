@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
 
     const encoder = new TextEncoder();
 
+    const abortSignal = request.signal;
+
     const stream = new ReadableStream({
       async start(controller) {
         const sendEvent = (event: RecommendationStreamEvent) => {
@@ -76,6 +78,17 @@ export async function POST(request: NextRequest) {
 
         let activeStep: RecommendationProgressStep | null = null;
 
+        const isAborted = (stage?: RecommendationProgressStep) => {
+          if (abortSignal.aborted) {
+            console.debug(
+              '🚫 Recommendation request aborted.',
+              stage ? `Stopping before stage: ${stage}` : ''
+            );
+            return true;
+          }
+          return false;
+        };
+
         const emitProgress = (
           step: RecommendationProgressStep,
           status: 'running' | 'completed' | 'error',
@@ -110,6 +123,9 @@ export async function POST(request: NextRequest) {
           console.log(`🚀 음식점 추천 요청 시작: ${city.name} - ${food.name}`);
 
           // 단계 1: 음식점 검색 + DB 준비
+          if (isAborted('SEARCH_RESTAURANTS')) {
+            return;
+          }
           beginStep('SEARCH_RESTAURANTS');
           const searchedRestaurants = await searchAndSaveRestaurants(
             city.id,
@@ -136,6 +152,9 @@ export async function POST(request: NextRequest) {
           completeStep('SEARCH_RESTAURANTS');
 
           // 단계 2: 리뷰 수집
+          if (isAborted('COLLECT_REVIEWS')) {
+            return;
+          }
           beginStep('COLLECT_REVIEWS');
 
           let reviewDataList: ReviewData[];
@@ -151,6 +170,9 @@ export async function POST(request: NextRequest) {
           }
 
           // 단계 3: AI 분석 + 리포트 저장
+          if (isAborted('ANALYZE_REPORTS')) {
+            return;
+          }
           beginStep('ANALYZE_REPORTS');
 
           let reportResults: PromiseSettledResult<RestaurantReport | null>[];
@@ -182,6 +204,9 @@ export async function POST(request: NextRequest) {
           }
 
           // 단계 4: 점수 계산 및 랭킹
+          if (isAborted('CALCULATE_SCORES')) {
+            return;
+          }
           beginStep('CALCULATE_SCORES');
 
           const newReports = reportResults
