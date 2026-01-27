@@ -1,6 +1,5 @@
+import { recommendationApi } from '@/app/api-client/recommendations';
 import { useMutation } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
-import { recommendationApi } from '../api-client/recommendations';
 import type {
   RecommendationProgressEvent,
   RecommendationRequest,
@@ -10,19 +9,24 @@ export function useRecommendation() {
   interface RecommendationMutationVariables {
     request: RecommendationRequest;
     onProgress?: (event: RecommendationProgressEvent) => void;
+    signal?: AbortSignal;
   }
 
   const {
     mutateAsync: getRecommendations,
     isPending: isGettingRecommendations,
   } = useMutation({
-    mutationFn: ({ request, onProgress }: RecommendationMutationVariables) => {
+    mutationFn: ({
+      request,
+      onProgress,
+      signal,
+    }: RecommendationMutationVariables) => {
       return recommendationApi().getRecommendations(request, {
         onProgress,
+        signal,
       });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to get recommendations');
       throw error;
     },
   });

@@ -50,10 +50,23 @@ export function recommendationApi() {
         const processStream = async () => {
           try {
             while (true) {
+              // AbortSignal 체크: 요청이 취소되었는지 확인
+              if (options?.signal?.aborted) {
+                reader.cancel().catch(() => {});
+                reject(new DOMException('Request was cancelled', 'AbortError'));
+                return;
+              }
+
               const { done, value } = await reader.read();
 
               if (done) {
-                reject(new Error('Stream ended without result'));
+                // 스트림이 끝났는데 result를 받지 못한 경우
+                // AbortSignal이 활성화된 경우 AbortError로 처리
+                if (options?.signal?.aborted) {
+                  reject(new DOMException('Request was cancelled', 'AbortError'));
+                } else {
+                  reject(new Error('Stream ended without result'));
+                }
                 return;
               }
 
@@ -90,6 +103,19 @@ export function recommendationApi() {
               }
             }
           } catch (error) {
+            // AbortError인 경우 명확하게 처리
+            if (
+              error instanceof DOMException &&
+              error.name === 'AbortError'
+            ) {
+              reject(error);
+              return;
+            }
+            // fetch의 AbortError도 처리
+            if (error instanceof Error && error.name === 'AbortError') {
+              reject(new DOMException('Request was cancelled', 'AbortError'));
+              return;
+            }
             reject(error);
           }
         };

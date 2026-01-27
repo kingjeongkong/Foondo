@@ -39,15 +39,55 @@ export async function POST(request: NextRequest) {
 
     const encoder = new TextEncoder();
 
+    const abortSignal = request.signal;
+
     const stream = new ReadableStream({
       async start(controller) {
         const sendEvent = (event: RecommendationStreamEvent) => {
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
-          );
+          try {
+            // 스트림 컨트롤러가 이미 닫힌 경우 이벤트 전송을 건너뜁니다.
+            if (controller.desiredSize === null) {
+              console.debug(
+                '⚠️ SSE controller already closed. Skip sending event.',
+                event.type
+              );
+              return;
+            }
+
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
+            );
+          } catch (error) {
+            // 컨트롤러가 닫힌 상태에서 enqueue를 시도한 경우는 조용히 무시합니다.
+            if (
+              error instanceof TypeError &&
+              typeof error.message === 'string' &&
+              error.message.includes('closed')
+            ) {
+              console.debug(
+                '⚠️ Failed to enqueue SSE event because controller is closed.',
+                event.type
+              );
+              return;
+            }
+
+            // 그 외 예상하지 못한 에러는 상위 에러 핸들링으로 전달합니다.
+            throw error;
+          }
         };
 
         let activeStep: RecommendationProgressStep | null = null;
+
+        const isAborted = (stage?: RecommendationProgressStep) => {
+          if (abortSignal.aborted) {
+            console.debug(
+              '🚫 Recommendation request aborted.',
+              stage ? `Stopping before stage: ${stage}` : ''
+            );
+            return true;
+          }
+          return false;
+        };
 
         const emitProgress = (
           step: RecommendationProgressStep,
@@ -83,6 +123,9 @@ export async function POST(request: NextRequest) {
           console.log(`🚀 음식점 추천 요청 시작: ${city.name} - ${food.name}`);
 
           // 단계 1: 음식점 검색 + DB 준비
+          if (isAborted('SEARCH_RESTAURANTS')) {
+            return;
+          }
           beginStep('SEARCH_RESTAURANTS');
           const searchedRestaurants = await searchAndSaveRestaurants(
             city.id,
@@ -109,6 +152,9 @@ export async function POST(request: NextRequest) {
           completeStep('SEARCH_RESTAURANTS');
 
           // 단계 2: 리뷰 수집
+          if (isAborted('COLLECT_REVIEWS')) {
+            return;
+          }
           beginStep('COLLECT_REVIEWS');
 
           let reviewDataList: ReviewData[];
@@ -124,6 +170,9 @@ export async function POST(request: NextRequest) {
           }
 
           // 단계 3: AI 분석 + 리포트 저장
+          if (isAborted('ANALYZE_REPORTS')) {
+            return;
+          }
           beginStep('ANALYZE_REPORTS');
 
           let reportResults: PromiseSettledResult<RestaurantReport | null>[];
@@ -155,6 +204,9 @@ export async function POST(request: NextRequest) {
           }
 
           // 단계 4: 점수 계산 및 랭킹
+          if (isAborted('CALCULATE_SCORES')) {
+            return;
+          }
           beginStep('CALCULATE_SCORES');
 
           const newReports = reportResults
