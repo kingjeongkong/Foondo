@@ -135,7 +135,8 @@ export async function POST(request: NextRequest) {
           );
 
           const existingRestaurants = await getExistingRestaurantsByFood(
-            food.id
+            food.id,
+            city.id
           );
           const existingRestaurantIds = new Set(
             existingRestaurants.map((r) => r.id)
@@ -185,21 +186,29 @@ export async function POST(request: NextRequest) {
             reportResults = [];
             completeStep('ANALYZE_REPORTS');
           } else {
-            console.log(`📝 단계 3 실행: ${reviewDataList.length}개 음식점 리포트 생성 시작`);
-            
+            console.log(
+              `📝 단계 3 실행: ${reviewDataList.length}개 음식점 리포트 생성 시작`
+            );
+
             // pLimit을 사용하여 동시 실행 제한 (최대 5개)
             const reportPromises = reviewDataList.map(
               (reviewData: ReviewData) =>
                 reportLimiter(() => analyzeAndSaveRestaurantReport(reviewData))
             );
-            
+
             reportResults = await Promise.allSettled(reportPromises);
-            
-            const fulfilledCount = reportResults.filter(r => r.status === 'fulfilled').length;
-            const rejectedCount = reportResults.filter(r => r.status === 'rejected').length;
-            
-            console.log(`✅ 단계 3 완료: ${fulfilledCount}개 성공, ${rejectedCount}개 실패`);
-            
+
+            const fulfilledCount = reportResults.filter(
+              (r) => r.status === 'fulfilled'
+            ).length;
+            const rejectedCount = reportResults.filter(
+              (r) => r.status === 'rejected'
+            ).length;
+
+            console.log(
+              `✅ 단계 3 완료: ${fulfilledCount}개 성공, ${rejectedCount}개 실패`
+            );
+
             completeStep('ANALYZE_REPORTS');
           }
 
@@ -216,11 +225,10 @@ export async function POST(request: NextRequest) {
             )
             .map(
               (result) =>
-                (result as PromiseFulfilledResult<RestaurantReport | null>).value
+                (result as PromiseFulfilledResult<RestaurantReport | null>)
+                  .value
             )
-            .filter(
-              (report): report is RestaurantReport => report !== null
-            );
+            .filter((report): report is RestaurantReport => report !== null);
 
           const existingRestaurantReports = existingRestaurants
             .map((r) => r.report)
