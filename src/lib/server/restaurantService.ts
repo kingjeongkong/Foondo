@@ -26,7 +26,7 @@ export async function searchAndSaveRestaurants(
   cityId: string,
   cityName: string,
   foodId: string,
-  foodName: string,
+  foodName: string
 ) {
   console.log(`🔍 음식점 검색 시작: ${cityName} - ${foodName}`);
 
@@ -114,16 +114,21 @@ export async function searchAndSaveRestaurants(
 }
 
 /**
- * DB에서 특정 음식과 연결된 기존 음식점들을 조회합니다.
+ * DB에서 특정 도시·음식에 연결된 기존 음식점들을 조회합니다.
  * 리포트가 있는 음식점만 반환합니다.
  * @param foodId 음식 ID
+ * @param cityId 도시 ID (선택한 도시만 조회)
  * @returns 리포트가 있는 음식점 배열 (report 포함)
  */
-export async function getExistingRestaurantsByFood(foodId: string) {
-  console.log(`🔍 기존 음식점 조회 시작: foodId=${foodId}`);
+export async function getExistingRestaurantsByFood(
+  foodId: string,
+  cityId: string
+) {
+  console.log(`🔍 기존 음식점 조회 시작: foodId=${foodId}, cityId=${cityId}`);
 
   const restaurants = await prisma.restaurant.findMany({
     where: {
+      cityId,
       foods: {
         some: {
           foodId: foodId,
