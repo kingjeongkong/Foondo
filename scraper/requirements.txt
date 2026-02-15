@@ -1,2 +1,5 @@
 # FastAPI + ASGI server
 fastapi[standard]>=0.115.0
+
+# Search (Phase 1)
+ddgs>=8.0.0

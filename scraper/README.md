@@ -14,4 +14,5 @@ uvicorn main:app --reload
 
 - API: http://127.0.0.1:8000
 - 헬스: http://127.0.0.1:8000/health
+- 검색 테스트: http://127.0.0.1:8000/search?restaurant_name=Villegas+Restó&city_name=Buenos+Aires
 - 문서: http://127.0.0.1:8000/docs

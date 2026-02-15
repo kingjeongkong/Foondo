@@ -1,8 +1,10 @@
 """
 Foondo Restaurant Detail Scraper — FastAPI 진입점
-Phase 0: 헬스 체크만 노출
+라우터만 등록하고, 비즈니스 로직은 app.api / app.services 에 둠.
 """
 from fastapi import FastAPI
+
+from app.api import health, search
 
 app = FastAPI(
     title="Foondo Scraper",
@@ -10,8 +12,5 @@ app = FastAPI(
     version="0.1.0",
 )
 
-
-@app.get("/health")
-def health():
-    """배포/로드밸런서 헬스 체크용"""
-    return {"status": "ok"}
+app.include_router(health.router, tags=["health"])
+app.include_router(search.router, tags=["search"])
