@@ -4,7 +4,7 @@ Foondo Restaurant Detail Scraper — FastAPI 진입점
 """
 from fastapi import FastAPI
 
-from app.api import health, search
+from app.api import health, scrape as scrape_api, search
 
 app = FastAPI(
     title="Foondo Scraper",
@@ -14,3 +14,4 @@ app = FastAPI(
 
 app.include_router(health.router, tags=["health"])
 app.include_router(search.router, tags=["search"])
+app.include_router(scrape_api.router, tags=["scrape"])

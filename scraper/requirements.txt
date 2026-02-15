@@ -3,3 +3,7 @@ fastapi[standard]>=0.115.0
 
 # Search (Phase 1)
 ddgs>=8.0.0
+
+# Scrape (Phase 2)
+requests>=2.31.0
+beautifulsoup4>=4.12.0
