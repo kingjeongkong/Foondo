@@ -1,0 +1,2 @@
+# FastAPI + ASGI server
+fastapi[standard]>=0.115.0

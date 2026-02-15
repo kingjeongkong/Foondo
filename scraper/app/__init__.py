@@ -1,0 +1,1 @@
+# Foondo Scraper application package

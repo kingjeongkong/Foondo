@@ -585,6 +585,65 @@ export function useSearch() {
 - Use `useMemo`, `useCallback` only when necessary
 - Code splitting with dynamic imports
 
+## 🐍 Scraper (Python) - Structure & Conventions
+
+- **Location**: Root-level `scraper/` (same level as `src/`). Not inside `src/`.
+- **Role**: Restaurant detail scraping service. Search → scrape URLs → OpenAI analyze → DB. Deployed separately from Next.js (e.g. Railway, Lambda); Vercel only deploys Next.js.
+
+### Folder Structure
+
+```
+scraper/
+├── main.py                 # FastAPI app only: create app, include_router(...)
+├── requirements.txt
+├── Dockerfile
+├── README.md
+├── app/
+│   ├── __init__.py
+│   ├── api/                # HTTP endpoints (routers)
+│   │   ├── __init__.py
+│   │   ├── health.py       # GET /health
+│   │   └── scrape.py      # POST /scrape etc.
+│   ├── core/               # Config, constants, shared clients
+│   │   ├── __init__.py
+│   │   └── config.py      # Env, settings (pydantic-settings when needed)
+│   │   # browser.py       # Add when using Playwright: browser options, lifecycle
+│   ├── models/             # Pydantic request/response schemas
+│   │   ├── __init__.py
+│   │   └── schemas.py
+│   └── services/           # Business logic (single responsibility per file)
+│       ├── __init__.py
+│       ├── search.py      # Search → URL list
+│       ├── scrape.py      # URL → fetch & extract text
+│       ├── analyze.py     # Text → OpenAI summary
+│       └── db.py          # Persist results to DB
+└── tests/
+    ├── __init__.py
+    └── ...
+```
+
+### Directory Roles
+
+| Directory | Purpose | When extending |
+|-----------|---------|----------------|
+| `main.py` | Entry point; only `FastAPI()` and `app.include_router(...)` | Add one line per new router |
+| `app/api/` | Map HTTP to services; no business logic | New endpoint → new router file or route |
+| `app/core/` | Config, env, and shared clients (e.g. browser) | New config or client → add here |
+| `app/models/` | Pydantic schemas for API and internal use | New DTOs/schemas here |
+| `app/services/` | One concern per file (search, scrape, analyze, db) | New step → new service file |
+
+### Design Principles
+
+1. **Single responsibility**: Each file in `services/` does one thing (search, scrape, analyze, db).
+2. **Dependency direction**: `api/` → `services/`, `models/`. `services/` may use `core/` and each other; no `api/` or `core` importing from `api/`.
+3. **Testing**: Unit-test `services/` in isolation; keep routers thin.
+4. **Entry point**: Keep `app` in `main.py` so `uvicorn main:app` works unchanged.
+
+### Optional Practices
+
+- **Dependency injection**: Prefer `Depends(get_xyz_service)` in routes when services take config/DB/clients; start with plain imports and refactor to `Depends` when tests or swapping implementations are needed.
+- **Browser/client in core**: If using Playwright/Selenium, centralize options (headless, User-Agent, timeouts) in `app/core/config.py` and browser creation/lifecycle in `app/core/browser.py` (or `client.py`).
+
 ## 🚨 Important Notes
 
 ### Prohibited Actions
