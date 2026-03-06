@@ -39,10 +39,15 @@ export async function analyzeReviewsWithAI(
   );
 
   try {
+    // 리뷰 경계가 명확하도록 번호 붙여서 전달 (줄바꿈만으로는 구분 어려움)
+    const formattedReviews = reviews
+      .map((text, i) => `[Review ${i + 1}]\n${text}`)
+      .join('\n\n');
+
     // AI 분석 실행
     const response = await reviewAIService.generateJSON<AIAnalysisResult>(
       createSystemPrompt(),
-      reviews.join('\n\n')
+      formattedReviews
     );
 
     const validatedResult = AIAnalysisSchema.parse(response.data);
@@ -62,6 +67,7 @@ export async function analyzeReviewsWithAI(
 function createSystemPrompt(): string {
   return `
 You are an expert restaurant analyst. Your job is to evaluate restaurants strictly based on the provided customer reviews.
+The input is a list of reviews: each block labeled [Review N] is one separate customer review.
 You MUST follow all rules below with no exceptions.
 
 GENERAL RULES:
