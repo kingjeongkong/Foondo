@@ -9,7 +9,7 @@ import { PrioritySelector } from '@/app/components/search/priority/PrioritySelec
 import { useRecommendationFlow } from '@/app/hooks/useRecommendationFlow';
 import { useSearchFlow } from '@/app/hooks/useSearchFlow';
 import type { PrioritySettings } from '@/app/types/search';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 
 // 앱 헤더 컴포넌트
 function AppHeader() {
@@ -48,13 +48,44 @@ function HomeContent() {
 
   // Priority 완료 핸들러 (step 이동 + Recommendations fetch)
   const handlePriorityComplete = async (priorities: PrioritySettings) => {
-    // useSearchFlow의 handlePriorityComplete 호출 (step 이동)
+    // useSearchFlow의 handlePriorityComplete 호출 (step 이동 + URL에 우선순위 반영)
     handlers.handlePriorityComplete(priorities);
     // useRecommendationFlow의 handlePriorityComplete 호출 (recommendations fetch)
     if (selectedCity && selectedFood) {
       await handleRecommendationComplete(priorities);
     }
   };
+
+  // results 진입 시 URL만으로 들어온 경우(공유/히스토리): 추천 한 번 자동 요청
+  const hasFetchedForResultsRef = useRef(false);
+  useEffect(() => {
+    if (step !== 'results') {
+      hasFetchedForResultsRef.current = false;
+      return;
+    }
+
+    if (
+      !selectedCity ||
+      !selectedFood ||
+      !selectedPriorities ||
+      recommendations.length > 0 ||
+      isGettingRecommendations
+    ) {
+      return;
+    }
+
+    if (hasFetchedForResultsRef.current) return;
+    hasFetchedForResultsRef.current = true;
+    handleRecommendationComplete(selectedPriorities);
+  }, [
+    step,
+    selectedCity,
+    selectedFood,
+    selectedPriorities,
+    recommendations.length,
+    isGettingRecommendations,
+    handleRecommendationComplete,
+  ]);
 
   // 뒤로가기 핸들러
   const handleBack = () => {
@@ -74,8 +105,8 @@ function HomeContent() {
   // step별로 다른 로딩 조건 적용
   const isLoading =
     step === 'city' || step === 'food'
-      ? status.isLoadingCity 
-      : status.isLoadingCity || status.isLoadingFood; 
+      ? status.isLoadingCity
+      : status.isLoadingCity || status.isLoadingFood;
 
   return (
     <div className="container mx-auto px-4 py-8 lg:py-12">
@@ -93,9 +124,7 @@ function HomeContent() {
               <div className="restaurant-card w-full max-w-3xl border border-white/40 rounded-2xl p-8">
                 <div className="flex flex-col items-center justify-center gap-4 py-12">
                   <div className="ai-loader w-8 h-8" />
-                  <p className="text-sm text-gray-500">
-                    Loading...
-                  </p>
+                  <p className="text-sm text-gray-500">Loading...</p>
                 </div>
               </div>
             ) : (

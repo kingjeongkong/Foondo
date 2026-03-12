@@ -1,6 +1,10 @@
 import type { City, CreateCityRequest } from '@/app/types/city';
 import type { Food } from '@/app/types/food';
 import type { PrioritySettings } from '@/app/types/search';
+import {
+  decodePrioritySettings,
+  encodePrioritySettings,
+} from '@/utils/priorityEncoding';
 import { useRouter } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { useEffect, useState } from 'react';
@@ -20,6 +24,7 @@ export function useSearchFlow() {
   // URL에 검색 조건 저장 (공유/북마크/복구 지원)
   const [cityId, setCityId] = useQueryState('cityId');
   const [foodId, setFoodId] = useQueryState('foodId');
+  const [priorityCode, setPriorityCode] = useQueryState('priority');
 
   // URL에서 데이터 복원 (서버에서 가져온 데이터)
   const { city: cityFromCache, isLoading: isLoadingCity } =
@@ -37,9 +42,19 @@ export function useSearchFlow() {
     shouldFetchFood
   );
 
-  // Priority는 URL에 저장하지 않음 (복잡한 객체이므로)
+  // 메모리 상태 + URL 우선순위 파라미터와 동기화
   const [selectedPriorities, setSelectedPriorities] =
     useState<PrioritySettings | null>(null);
+
+  // URL의 p에서 우선순위 복원 (공유/히스토리 진입 시)
+  useEffect(() => {
+    if (selectedPriorities == null && priorityCode) {
+      const decoded = decodePrioritySettings(priorityCode);
+      if (decoded) {
+        setSelectedPriorities(decoded);
+      }
+    }
+  }, [priorityCode, selectedPriorities]);
 
   // City 관련 로직
   const { createOrGetCity, isCreatingCity, getCachedCity } = useCity();
@@ -100,9 +115,11 @@ export function useSearchFlow() {
     }
   };
 
-  // Priority 완료 핸들러
+  // Priority 완료 핸들러 (URL에 우선순위 파라미터 반영)
   const handlePriorityComplete = (priorities: PrioritySettings) => {
     setSelectedPriorities(priorities);
+    const code = encodePrioritySettings(priorities);
+    setPriorityCode(code, { history: 'push' });
     next();
   };
 
@@ -124,6 +141,7 @@ export function useSearchFlow() {
     // 새 검색은 완전히 새로운 맥락이므로 초기화
     setCityId(null, { history: 'replace' });
     setFoodId(null, { history: 'replace' });
+    setPriorityCode(null, { history: 'replace' });
     setSelectedPriorities(null);
     setSelectedCityState(null); // 임시 저장도 초기화
     setStep('city');
