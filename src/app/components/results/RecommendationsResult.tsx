@@ -69,6 +69,7 @@ export function RecommendationsResult({
                 finalScore={recommendation.finalScore}
                 restaurant={recommendation.restaurant}
                 aiSummary={recommendation.report.aiSummary}
+                report={recommendation.report}
               />
             ))
           ) : (

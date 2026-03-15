@@ -21,6 +21,7 @@ export const recommendationSchema = z.object({
     atmosphereScore: z.number().min(0).max(100).nullable(),
     serviceScore: z.number().min(0).max(100).nullable(),
     quantityScore: z.number().min(0).max(100).nullable(),
+    accessibilityScore: z.number().min(0).max(100).nullable(),
     aiSummary: z.string().nullable(),
   }),
 });

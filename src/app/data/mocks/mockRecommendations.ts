@@ -18,6 +18,7 @@ export interface MockRecommendation {
     atmosphereScore: number | null;
     serviceScore: number | null;
     quantityScore: number | null;
+    accessibilityScore: number | null;
     aiSummary: string | null;
   };
 }
@@ -47,6 +48,7 @@ export function generateMockRecommendations(
         atmosphereScore: 75.0,
         serviceScore: 90.0,
         quantityScore: 85.0,
+        accessibilityScore: 80.0,
         aiSummary:
           'Outstanding traditional fish and chips with friendly service and generous portions. Highly recommended by locals and tourists alike.',
       },
@@ -67,6 +69,7 @@ export function generateMockRecommendations(
         atmosphereScore: 80.0,
         serviceScore: 82.0,
         quantityScore: 80.0,
+        accessibilityScore: 75.0,
         aiSummary:
           'Authentic Chinese cuisine with excellent flavors and attentive service. Great value for money with large portion sizes.',
       },
@@ -87,6 +90,7 @@ export function generateMockRecommendations(
         atmosphereScore: 88.0,
         serviceScore: 78.0,
         quantityScore: 76.0,
+        accessibilityScore: 72.0,
         aiSummary:
           'Charming Italian restaurant with romantic atmosphere. Delicious pasta and pizza dishes with authentic Italian flavors.',
       },
@@ -107,6 +111,7 @@ export function generateMockRecommendations(
         atmosphereScore: 70.0,
         serviceScore: 75.0,
         quantityScore: 85.0,
+        accessibilityScore: 78.0,
         aiSummary:
           'Flavorful Indian dishes with generous portions. Affordable prices make it a popular choice for families and groups.',
       },
@@ -127,6 +132,7 @@ export function generateMockRecommendations(
         atmosphereScore: 68.0,
         serviceScore: 72.0,
         quantityScore: 75.0,
+        accessibilityScore: 85.0,
         aiSummary:
           'Classic burgers with fresh ingredients. Casual dining atmosphere perfect for quick meals and family outings.',
       },
