@@ -1,10 +1,12 @@
 'use client';
 
+import type { Recommendation } from '@/app/types/recommendations';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { openGoogleMaps } from '@/lib/googlePlaces';
 import Image from 'next/image';
 import { useState } from 'react';
+import { ScoreChart } from '@/app/components/results/ScoreChart';
 
 export interface RestaurantCardProps {
   rank: number;
@@ -17,6 +19,8 @@ export interface RestaurantCardProps {
     photoUrl: string | null;
   };
   aiSummary: string | null;
+  /** 항목별 점수(report). 있으면 "Score breakdown" 토글로 차트 표시 */
+  report?: Recommendation['report'] | null;
 }
 
 /**
@@ -28,9 +32,22 @@ export function RestaurantCard({
   finalScore,
   restaurant,
   aiSummary,
+  report,
 }: RestaurantCardProps) {
-  // 이미지 로드 에러 상태 관리
   const [imageError, setImageError] = useState(false);
+  const [scoreBreakdownOpen, setScoreBreakdownOpen] = useState(false);
+
+  // report에 유효한 점수가 하나라도 있으면 breakdown 토글 표시
+  const hasScoreData =
+    report &&
+    [
+      report.tasteScore,
+      report.priceScore,
+      report.atmosphereScore,
+      report.serviceScore,
+      report.quantityScore,
+      report.accessibilityScore,
+    ].some((s) => s != null);
   // 점수에 따른 색상 결정
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-fresh-taste';
@@ -135,6 +152,27 @@ export function RestaurantCard({
               <span className="mr-1.5">📍</span>
               View on Map
             </Button>
+
+            {/* Score breakdown 토글 (옵션 B: 펼치기) */}
+            {hasScoreData && (
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setScoreBreakdownOpen((prev) => !prev)}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <span className="tabular-nums">
+                    {scoreBreakdownOpen ? '▼' : '▶'}
+                  </span>
+                  Score breakdown
+                </button>
+                {scoreBreakdownOpen && (
+                  <div className="mt-3 max-w-xs">
+                    <ScoreChart scores={report} />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 데스크톱: 카드 우측 상단 점수 */}
