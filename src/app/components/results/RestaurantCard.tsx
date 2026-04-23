@@ -16,7 +16,7 @@ export interface RestaurantCardProps {
     placeId: string;
     name: string | null;
     address: string | null;
-    photoUrl: string | null;
+    photoReference: string | null;
   };
   aiSummary: string | null;
   /** 항목별 점수(report). 있으면 "Score breakdown" 토글로 차트 표시 */
@@ -90,9 +90,9 @@ export function RestaurantCard({
             <div className="flex w-full md:w-auto items-start gap-3">
               {/* 사진 */}
               <div className="shrink-0">
-                {restaurant.photoUrl && !imageError ? (
+                {restaurant.photoReference && !imageError ? (
                   <Image
-                    src={restaurant.photoUrl}
+                    src={`/api/restaurants/photo?ref=${encodeURIComponent(restaurant.photoReference)}`}
                     alt={restaurant.name || 'Restaurant'}
                     className="w-24 h-24 md:w-28 md:h-28 rounded-xl object-cover"
                     width={96}

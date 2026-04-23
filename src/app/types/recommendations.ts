@@ -13,7 +13,7 @@ export const recommendationSchema = z.object({
     placeId: z.string(),
     name: z.string().nullable(),
     address: z.string().nullable(),
-    photoUrl: z.union([z.string().url(), z.null()]),
+    photoReference: z.string().nullable(),
   }),
   report: z.object({
     tasteScore: z.number().min(0).max(100).nullable(),

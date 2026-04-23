@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
                   placeId: item.restaurant.placeId,
                   name: item.restaurant.name,
                   address: item.restaurant.address,
-                  photoUrl: item.restaurant.photoUrl,
+                  photoReference: item.restaurant.photoReference,
                 },
                 report: {
                   tasteScore: item.report.tasteScore,
