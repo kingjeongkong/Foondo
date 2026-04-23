@@ -50,10 +50,9 @@ export async function searchAndSaveRestaurants(
       try {
         const saved = await prisma.$transaction(
           async (tx) => {
-            // photoReference가 있을 때만 photoUrl 갱신 (없는 경우 기존 값 유지)
-            const photoUrl = restaurant.photoReference
-              ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${restaurant.photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`
-              : null;
+            // photoReference는 새 값이 있을 때만 갱신 (없으면 기존 값 유지).
+            // URL 조립은 저장하지 않고 브라우저 요청 시 photo proxy route에서 수행 — API key가 DB·클라이언트에 노출되지 않게 하기 위함.
+            const photoReference = restaurant.photoReference ?? null;
 
             // 2-1. 음식점 저장 (upsert - placeId 기준으로 중복 방지)
             const saved = await tx.restaurant.upsert({
@@ -61,13 +60,13 @@ export async function searchAndSaveRestaurants(
               update: {
                 name: restaurant.name,
                 address: restaurant.address,
-                ...(photoUrl !== null && { photoUrl }),
+                ...(photoReference !== null && { photoReference }),
               },
               create: {
                 placeId: restaurant.placeId,
                 name: restaurant.name,
                 address: restaurant.address,
-                photoUrl,
+                photoReference,
                 cityId: cityId,
               },
             });

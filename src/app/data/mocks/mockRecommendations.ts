@@ -10,7 +10,7 @@ export interface MockRecommendation {
     placeId: string;
     name: string | null;
     address: string | null;
-    photoUrl: string | null;
+    photoReference: string | null;
   };
   report: {
     tasteScore: number | null;
@@ -40,7 +40,7 @@ export function generateMockRecommendations(
         placeId: 'ChIJmock1',
         name: 'Seastar Fish & Chips',
         address: '123 Main Street, Bournemouth, UK',
-        photoUrl: null,
+        photoReference: null,
       },
       report: {
         tasteScore: 88.5,
@@ -61,7 +61,7 @@ export function generateMockRecommendations(
         placeId: 'ChIJmock2',
         name: 'Golden Dragon Chinese Restaurant',
         address: '456 High Street, Bournemouth, UK',
-        photoUrl: null,
+        photoReference: null,
       },
       report: {
         tasteScore: 85.0,
@@ -82,7 +82,7 @@ export function generateMockRecommendations(
         placeId: 'ChIJmock3',
         name: 'La Bella Italia',
         address: '789 Ocean Drive, Bournemouth, UK',
-        photoUrl: null, // 사진 없는 경우 테스트용
+        photoReference: null, // 사진 없는 경우 테스트용 (photoReference도 null)
       },
       report: {
         tasteScore: 82.0,
@@ -103,7 +103,7 @@ export function generateMockRecommendations(
         placeId: 'ChIJmock4',
         name: 'Spice Garden Indian Cuisine',
         address: '321 Market Square, Bournemouth, UK',
-        photoUrl: null,
+        photoReference: null,
       },
       report: {
         tasteScore: 80.0,
@@ -124,7 +124,7 @@ export function generateMockRecommendations(
         placeId: 'ChIJmock5',
         name: 'The Burger House',
         address: '654 Beach Road, Bournemouth, UK',
-        photoUrl: null,
+        photoReference: null,
       },
       report: {
         tasteScore: 78.0,

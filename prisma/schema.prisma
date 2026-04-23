@@ -49,7 +49,7 @@ model Restaurant {
   cityId    String?  @map("city_id")
   name      String?
   address   String?
-  photoUrl  String?  @map("photo_url")
+  photoReference String? @map("photo_reference")
 
   city   City?       @relation(fields: [cityId], references: [id], onDelete: SetNull)
   report RestaurantReport?
