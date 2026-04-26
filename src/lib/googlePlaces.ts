@@ -49,6 +49,24 @@ const googlePlaceReviewsOnlyResponseSchema = z.object({
 // 외부에서 사용되는 타입만 export
 export type GooglePlaceReview = z.infer<typeof googlePlaceReviewSchema>;
 
+/**
+ * Places Details API 호출 결과 status.
+ * - OK: 정상 응답 (reviews 비어있을 수도 있음)
+ * - NOT_FOUND / INVALID_REQUEST: place가 Google에 존재하지 않거나 ID가 잘못됨 (식당 row 정리 신호)
+ * - ERROR: 네트워크/타임아웃/HTTP 에러/그 외 status (일시적 장애로 간주, 갱신 SKIP)
+ */
+export type GooglePlaceReviewsStatus =
+  | 'OK'
+  | 'NOT_FOUND'
+  | 'INVALID_REQUEST'
+  | 'ERROR';
+
+export type GooglePlaceReviewsResult = {
+  status: GooglePlaceReviewsStatus;
+  /** status !== 'OK'이면 항상 빈 배열 */
+  reviews: GooglePlaceReview[];
+};
+
 // 표준화된 레스토랑 데이터 타입
 export interface RestaurantData {
   placeId: string;
@@ -138,14 +156,15 @@ export async function searchRestaurantsByFood(
 }
 
 /**
- * Google Places Details API를 사용하여 특정 레스토랑의 리뷰만 가져옵니다.
+ * Google Places Details API를 사용하여 특정 레스토랑의 리뷰를 가져옵니다.
  * 기본 정보는 searchRestaurantsByFood에서 받은 데이터를 사용합니다.
+ * 호출자가 status에 따라 분기 처리할 수 있도록 status를 함께 반환합니다 (throw 안 함).
  * @param placeId Google Places place_id
- * @returns 리뷰 데이터만 반환
+ * @returns status + reviews
  */
 export async function getRestaurantReviews(
   placeId: string
-): Promise<GooglePlaceReview[]> {
+): Promise<GooglePlaceReviewsResult> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 
   if (!apiKey) {
@@ -166,34 +185,44 @@ export async function getRestaurantReviews(
     const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error(
-        `Google Places API error: ${response.status} ${response.statusText}`
+      console.error(
+        `❌ Google Places HTTP 에러 (${placeId}): ${response.status} ${response.statusText}`
       );
+      return { status: 'ERROR', reviews: [] };
     }
 
     const rawData = await response.json();
-
-    // Zod 스키마로 응답 검증
     const data = googlePlaceReviewsOnlyResponseSchema.parse(rawData);
 
-    if (data.status !== 'OK') {
-      throw new Error(`Google Places API error: ${data.status}`);
+    if (data.status === 'OK') {
+      const reviews: GooglePlaceReview[] = data.result.reviews || [];
+      console.log(
+        `✅ Google Places 리뷰 조회 완료 (${placeId}): ${reviews.length}개`
+      );
+      return { status: 'OK', reviews };
     }
 
-    const reviews: GooglePlaceReview[] = data.result.reviews || [];
+    if (data.status === 'NOT_FOUND' || data.status === 'INVALID_REQUEST') {
+      console.warn(
+        `⚠️ Google Places place 부재 (${placeId}): ${data.status}`
+      );
+      return { status: data.status, reviews: [] };
+    }
 
-    console.log(`✅ Google Places 리뷰 조회 완료: ${reviews.length}개 리뷰`);
-
-    return reviews;
+    console.error(
+      `❌ Google Places API status 비정상 (${placeId}): ${data.status}`
+    );
+    return { status: 'ERROR', reviews: [] };
   } catch (error) {
-    console.error('Google Places 리뷰 조회 중 오류 발생:', error);
-
     if (error instanceof z.ZodError) {
-      console.error('Google Places API 응답 검증 실패:', error.issues);
-      throw new Error('Google Places API 응답 형식이 올바르지 않습니다');
+      console.error(
+        `❌ Google Places API 응답 검증 실패 (${placeId}):`,
+        error.issues
+      );
+    } else {
+      console.error(`❌ Google Places 리뷰 조회 예외 (${placeId}):`, error);
     }
-
-    throw new Error('레스토랑 리뷰 조회에 실패했습니다');
+    return { status: 'ERROR', reviews: [] };
   }
 }
 
@@ -218,49 +247,29 @@ export function combineRestaurantData(
 
 /**
  * 여러 레스토랑의 리뷰를 병렬로 가져옵니다.
+ * 각 placeId에 대해 status를 함께 반환하여 호출자가 분기 처리할 수 있게 합니다.
  * @param placeIds 레스토랑 place_id 배열
- * @returns 각 placeId에 해당하는 리뷰 배열 (일부 실패 허용)
+ * @returns 각 placeId에 해당하는 status + reviews
  */
-export async function getMultipleRestaurantReviews(placeIds: string[]): Promise<
-  Array<{
-    placeId: string;
-    reviews: GooglePlaceReview[];
-  }>
-> {
+export async function getMultipleRestaurantReviews(
+  placeIds: string[]
+): Promise<Array<{ placeId: string } & GooglePlaceReviewsResult>> {
   if (placeIds.length === 0) {
     return [];
   }
 
   console.log(`🔍 ${placeIds.length}개 레스토랑 리뷰 병렬 조회 시작`);
 
-  try {
-    // 병렬로 모든 레스토랑의 리뷰를 가져옴 (일부 실패 허용)
-    const promises = placeIds.map(async (placeId) => {
-      try {
-        const reviews = await getRestaurantReviews(placeId);
-        return {
-          placeId,
-          reviews: reviews || [],
-        };
-      } catch (error) {
-        // 일부 실패 허용: 에러 로그만 남기고 빈 배열 반환
-        console.error(`❌ 리뷰 조회 실패 (placeId: ${placeId}):`, error);
-        return {
-          placeId,
-          reviews: [],
-        };
-      }
-    });
+  const promises = placeIds.map(async (placeId) => {
+    const result = await getRestaurantReviews(placeId);
+    return { placeId, ...result };
+  });
 
-    const results = await Promise.all(promises);
+  const results = await Promise.all(promises);
 
-    console.log(`✅ ${results.length}개 레스토랑 리뷰 조회 완료`);
+  console.log(`✅ ${results.length}개 레스토랑 리뷰 조회 완료`);
 
-    return results;
-  } catch (error) {
-    console.error('여러 레스토랑 리뷰 조회 중 오류 발생:', error);
-    throw new Error('레스토랑 리뷰 일괄 조회에 실패했습니다');
-  }
+  return results;
 }
 
 /**
