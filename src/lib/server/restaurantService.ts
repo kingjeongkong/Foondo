@@ -185,122 +185,174 @@ export async function collectRestaurantReviews(
   restaurants.forEach((restaurant) => {
     const reviewResult = reviewResultMap.get(restaurant.placeId);
 
-    // 리뷰 결과가 없거나 리뷰가 없으면 빈 배열로 반환 (기본 리포트 생성 보장)
-    if (
-      !reviewResult ||
-      !reviewResult.reviews ||
-      reviewResult.reviews.length === 0
-    ) {
-      console.log(
-        `⚠️ 리뷰 없음: ${restaurant.placeId} (기본 리포트 생성 예정)`
+    // 결과 자체가 없으면 (이 분기는 placeIds와 results 길이 mismatch 시에만 발생) ERROR로 간주
+    if (!reviewResult) {
+      console.warn(
+        `⚠️ 리뷰 결과 누락: ${restaurant.placeId} (ERROR로 처리)`
       );
       reviewDataList.push({
         restaurantId: restaurant.id,
-        reviews: [], // 빈 배열로 반환하여 기본 리포트 생성 보장
+        status: 'ERROR',
+        reviews: [],
       });
       return;
     }
 
-    // 리뷰 텍스트만 추출
+    // 리뷰 텍스트만 추출하고 빈 텍스트 제거
     const reviewTexts = reviewResult.reviews
       .map((review) => review.text)
       .filter(Boolean);
 
-    // 유효한 텍스트가 없으면 빈 배열로 반환 (기본 리포트 생성 보장)
-    if (reviewTexts.length === 0) {
-      console.log(
-        `⚠️ 유효한 리뷰 텍스트 없음: ${restaurant.placeId} (기본 리포트 생성 예정)`
-      );
-      reviewDataList.push({
-        restaurantId: restaurant.id,
-        reviews: [], // 빈 배열로 반환하여 기본 리포트 생성 보장
-      });
-      return;
-    }
-
-    // 리뷰가 있는 경우
     reviewDataList.push({
       restaurantId: restaurant.id,
+      status: reviewResult.status,
       reviews: reviewTexts,
     });
   });
 
-  const withReviewsCount = reviewDataList.filter(
-    (r) => r.reviews.length > 0
-  ).length;
-  const withoutReviewsCount = reviewDataList.length - withReviewsCount;
+  // 통계 로그
+  const counts = reviewDataList.reduce(
+    (acc, r) => {
+      if (r.status === 'OK' && r.reviews.length > 0) acc.withReviews++;
+      else if (r.status === 'OK') acc.okEmpty++;
+      else if (r.status === 'NOT_FOUND' || r.status === 'INVALID_REQUEST')
+        acc.notFound++;
+      else acc.error++;
+      return acc;
+    },
+    { withReviews: 0, okEmpty: 0, notFound: 0, error: 0 }
+  );
   console.log(
-    `✅ 단계 2 완료: ${reviewDataList.length}개 음식점 처리됨 (${withReviewsCount}개 리뷰 있음, ${withoutReviewsCount}개 리뷰 없음 - 기본 리포트 생성 예정)`
+    `✅ 단계 2 완료: ${reviewDataList.length}개 처리됨 (리뷰있음 ${counts.withReviews} / OK빈리뷰 ${counts.okEmpty} / 부재 ${counts.notFound} / 에러 ${counts.error})`
   );
 
   return reviewDataList;
 }
 
 /**
+ * 분석/저장 처리 결과 종류.
+ * - created/updated: 신규 생성 또는 기존 갱신, report 포함
+ * - skipped: refresh 도중 일시적 에러 또는 OK+빈리뷰 → 기존 리포트 유지
+ * - deleted: place 부재(NOT_FOUND/INVALID_REQUEST) → 식당 row 삭제됨 (cascade)
+ * - failed: 신규 처리 중 실패 → DB 저장 없음, 결과에서 제외
+ */
+export type ReportProcessResult =
+  | { kind: 'created' | 'updated'; report: RestaurantReport }
+  | { kind: 'skipped' | 'failed' | 'deleted'; restaurantId: string };
+
+/**
  * 음식점의 리뷰를 AI로 분석하고 리포트를 생성/업데이트합니다.
- * - 리포트가 없는 음식점 데이터만 받습니다 (이미 collectRestaurantReviews에서 필터링됨)
- * - 리뷰가 없는 경우: 기본 리포트 생성 (모든 점수 null)
- * - 리뷰가 있는 경우: AI 분석 실행 (타임아웃 적용)
- * - 타임아웃 또는 에러 발생 시: null 반환 (DB 저장 안 함, 다음 요청 시 재시도)
- * @param reviewData 리뷰 데이터 (리포트가 없는 음식점만)
- * @returns 생성/업데이트된 리포트 또는 null (실패 시)
+ *
+ * Google Places Details 응답 status에 따라 분기:
+ * - NOT_FOUND / INVALID_REQUEST: 식당 row 삭제 (cascade로 report·foods 정리)
+ * - ERROR: 신규는 failed, refresh는 skipped (기존 유지)
+ * - OK + 리뷰 비어있음: 신규는 default 리포트 생성, refresh는 skipped
+ * - OK + 리뷰 있음: AI 분석 → 신규는 CREATE / refresh는 UPDATE
+ *
+ * @param reviewData 리뷰 + status
+ * @param existingReport 갱신 대상이면 기존 리포트, 신규면 null
  */
 export async function analyzeAndSaveRestaurantReport(
-  reviewData: ReviewData
-): Promise<RestaurantReport | null> {
-  try {
-    if (reviewData.reviews.length === 0) {
-      // 리뷰 없음 → 기본 리포트 생성 (모든 점수 null)
-      console.log(`📋 기본 리포트 생성: ${reviewData.restaurantId}`);
-      return await prisma.restaurantReport.upsert({
-        where: { restaurantId: reviewData.restaurantId },
-        update: {},
-        create: {
-          restaurantId: reviewData.restaurantId,
-        },
-      });
-    }
+  reviewData: ReviewData,
+  existingReport: RestaurantReport | null = null
+): Promise<ReportProcessResult> {
+  const { restaurantId, status, reviews } = reviewData;
+  const isRefresh = existingReport !== null;
 
-    // 리뷰 있음 → AI 분석 실행 (타임아웃 적용)
+  // 1) place 부재 → 식당 row 삭제 (cascade)
+  if (status === 'NOT_FOUND' || status === 'INVALID_REQUEST') {
+    try {
+      const deleteResult = await prisma.restaurant.deleteMany({
+        where: { id: restaurantId },
+      });
+      console.log(
+        `🗑️  식당 삭제 (${status}, count=${deleteResult.count}): ${restaurantId}`
+      );
+      return { kind: 'deleted', restaurantId };
+    } catch (error) {
+      console.error(
+        `❌ 식당 삭제 실패 (${restaurantId}):`,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+      return { kind: 'failed', restaurantId };
+    }
+  }
+
+  // 2) 일시적 에러 → refresh는 SKIP, 신규는 failed
+  if (status === 'ERROR') {
     console.log(
-      `🤖 AI 분석 시작: ${reviewData.restaurantId} (${reviewData.reviews.length}개 리뷰)`
+      `⏭️  ${isRefresh ? 'refresh SKIP' : '신규 failed'} (ERROR): ${restaurantId}`
+    );
+    return { kind: isRefresh ? 'skipped' : 'failed', restaurantId };
+  }
+
+  // 3) status === 'OK' + 리뷰 빈 배열
+  if (reviews.length === 0) {
+    if (isRefresh) {
+      console.log(`⏭️  refresh SKIP (OK+빈리뷰): ${restaurantId}`);
+      return { kind: 'skipped', restaurantId };
+    }
+    // 신규 → 기본 리포트 생성 (기존 동작 유지)
+    console.log(`📋 기본 리포트 생성: ${restaurantId}`);
+    try {
+      const report = await prisma.restaurantReport.upsert({
+        where: { restaurantId },
+        update: {},
+        create: { restaurantId },
+      });
+      return { kind: 'created', report };
+    } catch (error) {
+      console.error(
+        `❌ 기본 리포트 생성 실패 (${restaurantId}):`,
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+      return { kind: 'failed', restaurantId };
+    }
+  }
+
+  // 4) status === 'OK' + 리뷰 있음 → AI 분석
+  try {
+    console.log(
+      `🤖 AI 분석 시작 (${isRefresh ? 'refresh' : '신규'}): ${restaurantId} (${reviews.length}개 리뷰)`
     );
 
-    // 20초 타임아웃 적용: 응답이 없으면 에러 발생하여 catch로 이동
     const analysis = await withTimeout(
-      analyzeReviewsWithAI(reviewData.reviews),
+      analyzeReviewsWithAI(reviews),
       15000,
       'AI analysis timeout'
     );
 
+    const reportFields = {
+      tasteScore: analysis.scores.taste,
+      priceScore: analysis.scores.price,
+      atmosphereScore: analysis.scores.atmosphere,
+      serviceScore: analysis.scores.service,
+      quantityScore: analysis.scores.quantity,
+      accessibilityScore: analysis.scores.accessibility,
+      aiSummary: analysis.summary,
+    };
+
     console.log(
-      `💾 리포트 저장: ${reviewData.restaurantId} (신뢰도: ${analysis.confidence}%)`
+      `💾 리포트 ${isRefresh ? 'UPDATE' : 'CREATE'}: ${restaurantId} (신뢰도: ${analysis.confidence}%)`
     );
 
-    return await prisma.restaurantReport.upsert({
-      where: { restaurantId: reviewData.restaurantId },
-      update: {}, // 추후 updated_at를 기준으로 업데이트 로직 추가
+    const report = await prisma.restaurantReport.upsert({
+      where: { restaurantId },
+      update: reportFields,
       create: {
-        restaurantId: reviewData.restaurantId,
-        tasteScore: analysis.scores.taste,
-        priceScore: analysis.scores.price,
-        atmosphereScore: analysis.scores.atmosphere,
-        serviceScore: analysis.scores.service,
-        quantityScore: analysis.scores.quantity,
-        accessibilityScore: analysis.scores.accessibility,
-        aiSummary: analysis.summary,
+        restaurantId,
+        ...reportFields,
       },
     });
+
+    return { kind: isRefresh ? 'updated' : 'created', report };
   } catch (error) {
-    // 타임아웃 또는 에러 발생 시: DB에 저장하지 않고 null 반환
-    // 다음 요청 시 자동으로 재시도됨
     console.error(
-      `❌ 리포트 생성 실패/타임아웃 (restaurantId: ${reviewData.restaurantId}):`,
+      `❌ 리포트 생성/갱신 실패 (${restaurantId}):`,
       error instanceof Error ? error.message : 'Unknown error'
     );
-
-    // DB에 저장하지 않고 null 반환 -> 결과에서 제외 & 다음에 재시도
-    return null;
+    // refresh 실패 → SKIP (기존 유지). 신규 실패 → failed (결과 제외)
+    return { kind: isRefresh ? 'skipped' : 'failed', restaurantId };
   }
 }
 

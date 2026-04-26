@@ -11,8 +11,9 @@ import {
   collectRestaurantReviews,
   getExistingRestaurantsByFood,
   searchAndSaveRestaurants,
+  type ReportProcessResult,
 } from '@/lib/server/restaurantService';
-import { Restaurant, RestaurantReport } from '@prisma/client';
+import { Restaurant } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import pLimit from 'p-limit';
 import { z } from 'zod';
@@ -145,28 +146,59 @@ export async function POST(request: NextRequest) {
             (r) => !existingRestaurantIds.has(r.id)
           );
 
-          const allRestaurants = [
-            ...existingRestaurants,
-            ...newRestaurants,
-          ] as Restaurant[];
+          // TTL 분류: report.lastUpdated 기준으로 stale 식당을 가장 오래된 N개 선택
+          const TTL_DAYS = parseInt(
+            process.env.RESTAURANT_REPORT_TTL_DAYS ?? '30',
+            10
+          );
+          const STALE_REFRESH_LIMIT = parseInt(
+            process.env.RESTAURANT_REPORT_STALE_REFRESH_LIMIT ?? '5',
+            10
+          );
+          const cutoff = new Date(Date.now() - TTL_DAYS * 86_400_000);
+
+          // existingRestaurants는 getExistingRestaurantsByFood에서 tasteScore not null 필터로
+          // 들어오지만 Prisma 타입상 report는 nullable. 안전하게 가드.
+          const existingWithReport = existingRestaurants.flatMap((r) =>
+            r.report ? [{ ...r, report: r.report }] : []
+          );
+
+          const staleSorted = existingWithReport
+            .filter((r) => r.report.lastUpdated < cutoff)
+            .sort(
+              (a, b) =>
+                a.report.lastUpdated.getTime() - b.report.lastUpdated.getTime()
+            );
+          const selectedStale = staleSorted.slice(0, STALE_REFRESH_LIMIT);
+
+          if (staleSorted.length > 0) {
+            const oldestDate = staleSorted[0].report.lastUpdated
+              .toISOString()
+              .slice(0, 10);
+            console.log(
+              `🔄 stale 후보 ${staleSorted.length}개 중 ${selectedStale.length}개 갱신 예정 (TTL ${TTL_DAYS}일, 가장 오래된 lastUpdated: ${oldestDate})`
+            );
+          }
 
           completeStep('SEARCH_RESTAURANTS');
 
-          // 단계 2: 리뷰 수집
+          // 단계 2: 리뷰 수집 (신규 + selectedStale 모두 대상)
           if (isAborted('COLLECT_REVIEWS')) {
             return;
           }
           beginStep('COLLECT_REVIEWS');
 
+          const needsAnalysis = [...newRestaurants, ...selectedStale];
+
           let reviewDataList: ReviewData[];
 
-          if (newRestaurants.length === 0) {
-            // 새로운 음식점이 없으면 최소 지연 후 스킵
+          if (needsAnalysis.length === 0) {
+            // 분석 대상이 없으면 최소 지연 후 스킵
             await new Promise((resolve) => setTimeout(resolve, 500));
             reviewDataList = [];
             completeStep('COLLECT_REVIEWS');
           } else {
-            reviewDataList = await collectRestaurantReviews(newRestaurants);
+            reviewDataList = await collectRestaurantReviews(needsAnalysis);
             completeStep('COLLECT_REVIEWS');
           }
 
@@ -176,24 +208,31 @@ export async function POST(request: NextRequest) {
           }
           beginStep('ANALYZE_REPORTS');
 
-          let reportResults: PromiseSettledResult<RestaurantReport | null>[];
+          let reportResults: PromiseSettledResult<ReportProcessResult>[];
 
           const reportLimiter = pLimit(5);
 
+          // 갱신 대상 식당의 기존 리포트 lookup용
+          const existingReportMap = new Map(
+            existingWithReport.map((r) => [r.id, r.report])
+          );
+
           if (reviewDataList.length === 0) {
-            // 리뷰 데이터가 없으면 최소 지연 후 스킵
             await new Promise((resolve) => setTimeout(resolve, 500));
             reportResults = [];
             completeStep('ANALYZE_REPORTS');
           } else {
             console.log(
-              `📝 단계 3 실행: ${reviewDataList.length}개 음식점 리포트 생성 시작`
+              `📝 단계 3 실행: ${reviewDataList.length}개 음식점 분석 시작 (신규 ${newRestaurants.length} / stale 갱신 ${selectedStale.length})`
             );
 
-            // pLimit을 사용하여 동시 실행 제한 (최대 5개)
-            const reportPromises = reviewDataList.map(
-              (reviewData: ReviewData) =>
-                reportLimiter(() => analyzeAndSaveRestaurantReport(reviewData))
+            const reportPromises = reviewDataList.map((reviewData) =>
+              reportLimiter(() =>
+                analyzeAndSaveRestaurantReport(
+                  reviewData,
+                  existingReportMap.get(reviewData.restaurantId) ?? null
+                )
+              )
             );
 
             reportResults = await Promise.allSettled(reportPromises);
@@ -206,7 +245,7 @@ export async function POST(request: NextRequest) {
             ).length;
 
             console.log(
-              `✅ 단계 3 완료: ${fulfilledCount}개 성공, ${rejectedCount}개 실패`
+              `✅ 단계 3 완료: fulfilled ${fulfilledCount}, rejected ${rejectedCount}`
             );
 
             completeStep('ANALYZE_REPORTS');
@@ -218,25 +257,58 @@ export async function POST(request: NextRequest) {
           }
           beginStep('CALCULATE_SCORES');
 
-          const newReports = reportResults
+          const fulfilledResults = reportResults
             .filter(
-              (result: PromiseSettledResult<RestaurantReport | null>) =>
-                result.status === 'fulfilled'
+              (r): r is PromiseFulfilledResult<ReportProcessResult> =>
+                r.status === 'fulfilled'
             )
-            .map(
-              (result) =>
-                (result as PromiseFulfilledResult<RestaurantReport | null>)
-                  .value
-            )
-            .filter((report): report is RestaurantReport => report !== null);
+            .map((r) => r.value);
 
-          const existingRestaurantReports = existingRestaurants
+          const refreshedReports = fulfilledResults.flatMap((r) =>
+            r.kind === 'created' || r.kind === 'updated' ? [r.report] : []
+          );
+
+          const deletedIds = new Set(
+            fulfilledResults.flatMap((r) =>
+              r.kind === 'deleted' ? [r.restaurantId] : []
+            )
+          );
+
+          // 처리 결과 카운트 (created / updated / skipped / failed / deleted)
+          const kindCounts = fulfilledResults.reduce<Record<string, number>>(
+            (acc, r) => {
+              acc[r.kind] = (acc[r.kind] ?? 0) + 1;
+              return acc;
+            },
+            {}
+          );
+          if (fulfilledResults.length > 0) {
+            console.log(
+              `✅ 처리 결과: created ${kindCounts.created ?? 0} / updated ${kindCounts.updated ?? 0} / skipped ${kindCounts.skipped ?? 0} / deleted ${kindCounts.deleted ?? 0} / failed ${kindCounts.failed ?? 0}`
+            );
+          }
+
+          // deletedIds 제외한 식당만 결과 후보
+          const aliveExistingRestaurants = existingRestaurants.filter(
+            (r) => !deletedIds.has(r.id)
+          );
+          const aliveNewRestaurants = newRestaurants.filter(
+            (r) => !deletedIds.has(r.id)
+          );
+
+          const allRestaurants = [
+            ...aliveExistingRestaurants,
+            ...aliveNewRestaurants,
+          ] as Restaurant[];
+
+          const aliveExistingReports = aliveExistingRestaurants
             .map((r) => r.report)
             .filter(
               (report): report is NonNullable<typeof report> => report !== null
             );
 
-          const allReports = [...newReports, ...existingRestaurantReports];
+          // 기존 → 갱신된 순서: calculateRestaurantScores 내부 Map dedup으로 갱신된 것이 덮어씀
+          const allReports = [...aliveExistingReports, ...refreshedReports];
 
           const restaurantScores = calculateRestaurantScores(
             allRestaurants,
