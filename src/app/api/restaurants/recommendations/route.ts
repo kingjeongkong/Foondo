@@ -1,6 +1,5 @@
 import type {
   RecommendationProgressStep,
-  RecommendationResponse,
   RecommendationStreamEvent,
 } from '@/app/types/recommendations';
 import { recommendationRequestSchema } from '@/app/types/recommendations';
@@ -13,10 +12,15 @@ import {
   searchAndSaveRestaurants,
   type ReportProcessResult,
 } from '@/lib/server/restaurantService';
-import { Restaurant } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import pLimit from 'p-limit';
 import { z } from 'zod';
+import {
+  buildRecommendationPayload,
+  classifyExistingByTtl,
+  mergeRecommendationResults,
+  summarizeProcessResults,
+} from './pipeline';
 
 /**
  * 음식점 추천 API
@@ -155,28 +159,22 @@ export async function POST(request: NextRequest) {
             process.env.RESTAURANT_REPORT_STALE_REFRESH_LIMIT ?? '5',
             10
           );
-          const cutoff = new Date(Date.now() - TTL_DAYS * 86_400_000);
 
-          // existingRestaurants는 getExistingRestaurantsByFood에서 tasteScore not null 필터로
-          // 들어오지만 Prisma 타입상 report는 nullable. 안전하게 가드.
-          const existingWithReport = existingRestaurants.flatMap((r) =>
-            r.report ? [{ ...r, report: r.report }] : []
-          );
+          const ttlClassification = classifyExistingByTtl(existingRestaurants, {
+            ttlDays: TTL_DAYS,
+            refreshLimit: STALE_REFRESH_LIMIT,
+          });
+          const { selectedStale, existingReportById } = ttlClassification;
 
-          const staleSorted = existingWithReport
-            .filter((r) => r.report.lastUpdated < cutoff)
-            .sort(
-              (a, b) =>
-                a.report.lastUpdated.getTime() - b.report.lastUpdated.getTime()
-            );
-          const selectedStale = staleSorted.slice(0, STALE_REFRESH_LIMIT);
-
-          if (staleSorted.length > 0) {
-            const oldestDate = staleSorted[0].report.lastUpdated
+          if (
+            ttlClassification.totalStaleCount > 0 &&
+            ttlClassification.oldestStaleAt
+          ) {
+            const oldestDate = ttlClassification.oldestStaleAt
               .toISOString()
               .slice(0, 10);
             console.log(
-              `🔄 stale 후보 ${staleSorted.length}개 중 ${selectedStale.length}개 갱신 예정 (TTL ${TTL_DAYS}일, 가장 오래된 lastUpdated: ${oldestDate})`
+              `🔄 stale 후보 ${ttlClassification.totalStaleCount}개 중 ${selectedStale.length}개 갱신 예정 (TTL ${TTL_DAYS}일, 가장 오래된 lastUpdated: ${oldestDate})`
             );
           }
 
@@ -212,11 +210,6 @@ export async function POST(request: NextRequest) {
 
           const reportLimiter = pLimit(5);
 
-          // 갱신 대상 식당의 기존 리포트 lookup용
-          const existingReportMap = new Map(
-            existingWithReport.map((r) => [r.id, r.report])
-          );
-
           if (reviewDataList.length === 0) {
             await new Promise((resolve) => setTimeout(resolve, 500));
             reportResults = [];
@@ -230,24 +223,12 @@ export async function POST(request: NextRequest) {
               reportLimiter(() =>
                 analyzeAndSaveRestaurantReport(
                   reviewData,
-                  existingReportMap.get(reviewData.restaurantId) ?? null
+                  existingReportById.get(reviewData.restaurantId) ?? null
                 )
               )
             );
 
             reportResults = await Promise.allSettled(reportPromises);
-
-            const fulfilledCount = reportResults.filter(
-              (r) => r.status === 'fulfilled'
-            ).length;
-            const rejectedCount = reportResults.filter(
-              (r) => r.status === 'rejected'
-            ).length;
-
-            console.log(
-              `✅ 단계 3 완료: fulfilled ${fulfilledCount}, rejected ${rejectedCount}`
-            );
-
             completeStep('ANALYZE_REPORTS');
           }
 
@@ -257,58 +238,25 @@ export async function POST(request: NextRequest) {
           }
           beginStep('CALCULATE_SCORES');
 
-          const fulfilledResults = reportResults
-            .filter(
-              (r): r is PromiseFulfilledResult<ReportProcessResult> =>
-                r.status === 'fulfilled'
-            )
-            .map((r) => r.value);
+          const summary = summarizeProcessResults(reportResults);
 
-          const refreshedReports = fulfilledResults.flatMap((r) =>
-            r.kind === 'created' || r.kind === 'updated' ? [r.report] : []
-          );
-
-          const deletedIds = new Set(
-            fulfilledResults.flatMap((r) =>
-              r.kind === 'deleted' ? [r.restaurantId] : []
-            )
-          );
-
-          // 처리 결과 카운트 (created / updated / skipped / failed / deleted)
-          const kindCounts = fulfilledResults.reduce<Record<string, number>>(
-            (acc, r) => {
-              acc[r.kind] = (acc[r.kind] ?? 0) + 1;
-              return acc;
-            },
-            {}
-          );
-          if (fulfilledResults.length > 0) {
+          if (reportResults.length > 0) {
+            const { created, updated, skipped, deleted, failed } =
+              summary.kindCounts;
             console.log(
-              `✅ 처리 결과: created ${kindCounts.created ?? 0} / updated ${kindCounts.updated ?? 0} / skipped ${kindCounts.skipped ?? 0} / deleted ${kindCounts.deleted ?? 0} / failed ${kindCounts.failed ?? 0}`
+              `✅ 단계 3 완료: fulfilled ${reportResults.length - summary.rejectedCount}, rejected ${summary.rejectedCount}`
+            );
+            console.log(
+              `✅ 처리 결과: created ${created} / updated ${updated} / skipped ${skipped} / deleted ${deleted} / failed ${failed}`
             );
           }
 
-          // deletedIds 제외한 식당만 결과 후보
-          const aliveExistingRestaurants = existingRestaurants.filter(
-            (r) => !deletedIds.has(r.id)
-          );
-          const aliveNewRestaurants = newRestaurants.filter(
-            (r) => !deletedIds.has(r.id)
-          );
-
-          const allRestaurants = [
-            ...aliveExistingRestaurants,
-            ...aliveNewRestaurants,
-          ] as Restaurant[];
-
-          const aliveExistingReports = aliveExistingRestaurants
-            .map((r) => r.report)
-            .filter(
-              (report): report is NonNullable<typeof report> => report !== null
-            );
-
-          // 기존 → 갱신된 순서: calculateRestaurantScores 내부 Map dedup으로 갱신된 것이 덮어씀
-          const allReports = [...aliveExistingReports, ...refreshedReports];
+          const { allRestaurants, allReports } = mergeRecommendationResults({
+            existingRestaurants,
+            newRestaurants,
+            refreshedReports: summary.refreshedReports,
+            deletedIds: summary.deletedIds,
+          });
 
           const restaurantScores = calculateRestaurantScores(
             allRestaurants,
@@ -319,36 +267,12 @@ export async function POST(request: NextRequest) {
           await new Promise((resolve) => setTimeout(resolve, 300));
           completeStep('CALCULATE_SCORES');
 
-          const payload: RecommendationResponse = {
-            success: true,
-            data: {
-              recommendations: restaurantScores.map((item) => ({
-                rank: item.rank,
-                finalScore: Math.round(item.finalScore * 10) / 10,
-                restaurant: {
-                  id: item.restaurant.id,
-                  placeId: item.restaurant.placeId,
-                  name: item.restaurant.name,
-                  address: item.restaurant.address,
-                  photoReference: item.restaurant.photoReference,
-                },
-                report: {
-                  tasteScore: item.report.tasteScore,
-                  priceScore: item.report.priceScore,
-                  atmosphereScore: item.report.atmosphereScore,
-                  serviceScore: item.report.serviceScore,
-                  quantityScore: item.report.quantityScore,
-                  accessibilityScore: item.report.accessibilityScore,
-                  aiSummary: item.report.aiSummary,
-                },
-              })),
-            },
-            message: 'Recommendations generated successfully',
-          };
-
           sendEvent({
             type: 'result',
-            payload,
+            payload: buildRecommendationPayload(
+              restaurantScores,
+              'Recommendations generated successfully'
+            ),
           });
         } catch (error) {
           console.error('❌ 음식점 추천 요청 실패:', error);
